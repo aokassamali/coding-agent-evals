@@ -1,0 +1,5 @@
+{"task_id":"sum_two","prompt":"Implement sum_two(a,b) -> a+b.","signature":"def sum_two(a: int, b: int) -> int:","tests":"def test_sum_two():\n    assert sum_two(1,2)==3\n    assert sum_two(-1,1)==0\n"}
+{"task_id":"exp_b","prompt":"Implement exp_b(a,b) -> a**b.","signature":"def exp_b(a: int, b: int) -> int:","tests":"def test_exp_b():\n    assert exp_b(3,2)==9\n    assert exp_b(-2,2)==4\n"}
+{"task_id":"sub","prompt":"Implement sub(a,b) -> a-b.","signature":"def sub(a: int, b: int) -> int:","tests":"def test_sub():\n    assert sub(1,2)==-1\n    assert sub(-1,1)==-2\n"}
+{"task_id":"divfloor","prompt":"Implement divfloor(a,b) -> a//b.","signature":"def divfloor(a: int, b: int) -> int:","tests":"def test_divfloor():\n    assert divfloor(15,4)==3\n    assert divfloor(-5,2)==-3\n"}
+{"task_id":"mult","prompt":"Implement mult(a,b) -> a*b.","signature":"def mult(a: int, b: int) -> int:","tests":"def test_mult():\n    assert mult(1,2)==2\n    assert mult(-1,1)==-1\n"}
