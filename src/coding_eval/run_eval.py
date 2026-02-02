@@ -17,8 +17,8 @@ from runner import run_suite
 
 @dataclass
 class Args:
-    tasks_path: str = "data/tasks/v1_bugfix.jsonl"
-    out_root: str = "runs"
+    tasks_path: str = "data/tasks/v7_oscillationtasks.jsonl"
+    out_root: str = "runs/z_qwen2_5_coder_7b_instruct_q6_k"
     run_tag: str = ""  # if empty, we auto-generate one
 
     llm_base_url: str = "http://127.0.0.1:8080/v1"
@@ -26,8 +26,8 @@ class Args:
 
     variants: tuple[str, ...] = ("A_naive", "B_debug")
 
-    max_attempts: int = 3
-    timeout_s: int = 10
+    max_attempts: int = 4
+    timeout_s: int = 4
 
 
 def main(args: Args) -> None:

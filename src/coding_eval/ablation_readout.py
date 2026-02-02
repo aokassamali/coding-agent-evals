@@ -32,6 +32,38 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
     return out
 
 
+def _min_int(xs: List[Optional[int]]) -> Optional[int]:
+    ys = [x for x in xs if isinstance(x, int)]
+    return min(ys) if ys else None
+
+
+def _first_int(xs: List[Optional[int]]) -> Optional[int]:
+    for x in xs:
+        if isinstance(x, int):
+            return x
+    return None
+
+
+def _oscillation(xs: List[Optional[int]]) -> bool:
+    """
+    Thrash/oscillation on failure counts: there exists a decrease at some point,
+    and later an increase.
+      [2, 1, 2] => True
+      [3, 2, 1] => False
+      [2, 2, 2] => False
+    """
+    ys = [x for x in xs if isinstance(x, int)]
+    if len(ys) < 3:
+        return False
+    saw_decrease = False
+    for i in range(1, len(ys)):
+        if ys[i] < ys[i - 1]:
+            saw_decrease = True
+        elif saw_decrease and ys[i] > ys[i - 1]:
+            return True
+    return False
+
+
 def _percentile(xs: List[float], p: float) -> Optional[float]:
     # p in [0, 100]
     if not xs:
@@ -51,7 +83,7 @@ def _percentile(xs: List[float], p: float) -> Optional[float]:
 
 def _parse_failed_count(pytest_stdout: str, pytest_stderr: str) -> Optional[int]:
     """
-    Try to estimate "distance to green" from pytest output.
+    Estimate "distance to green" from pytest output.
 
     Common endings:
       "1 failed in 0.08s"
@@ -62,11 +94,36 @@ def _parse_failed_count(pytest_stdout: str, pytest_stderr: str) -> Optional[int]
     m = _FAILED_RE.search(s)
     if m:
         return int(m.group("failed"))
-    # If we can't find "failed", but we can find "passed", assume 0 failed.
     mp = _PASSED_RE.search(s)
     if mp:
         return 0
     return None
+
+
+def _fail_curve(step_rows: List[Dict[str, Any]]) -> List[Optional[int]]:
+    """
+    Returns a list of failed-test counts for each pytest test step in order.
+    Each element is:
+      - int >= 0 if parsed
+      - None if we can't parse
+    """
+    curve: List[Optional[int]] = []
+    for s in step_rows:
+        if s.get("step_type") != "test":
+            continue
+        curve.append(_parse_failed_count(s.get("stdout", ""), s.get("stderr", "")))
+    return curve
+
+_TIER_RE = re.compile(r"^(tier\d+)_", re.IGNORECASE)
+
+def _task_tier(task_id: str) -> str:
+    m = _TIER_RE.match(task_id or "")
+    return m.group(1).lower() if m else "tier?"
+
+def _fmt_rate(x: Optional[float], width: int = 7) -> str:
+    if x is None:
+        return " " * (width - 3) + "n/a"
+    return f"{100.0*x:{width-1}.1f}%"
 
 
 # -----------------------------
@@ -82,6 +139,9 @@ class RunDerived:
     category: Optional[str]
     topic: Optional[str]
 
+    # Overall success (1/0). Prefer fact_run.jsonl's success if present; else infer from tests.
+    success: int
+
     # Derived from step logs
     has_starter: bool
 
@@ -91,7 +151,7 @@ class RunDerived:
     # fix-attempt index: counts FIX attempts only (starter test is "0 fixes")
     first_pass_fix_attempt: Optional[int]      # 0..Nfix, None if never passes
 
-    failed_tests_attempt1: Optional[int]       # failed tests on first test step
+    failed_tests_attempt1: Optional[int]       # failed tests on first test step (parsed)
     n_test_steps: int                          # number of test steps recorded
     rewrite_rejected: bool                     # any code_fix_rejected or failure_mode rewrite_too_large
 
@@ -101,19 +161,28 @@ class RunDerived:
     # Latency for LLM steps (ms)
     llm_latencies_ms: List[int]
 
+    # Progress metrics
+    failed_counts_by_test: List[Optional[int]]  # per test step: #failed (0 if passing)
+    best_failed: Optional[int]                  # min failed across attempts (includes 0 if passes)
+    improved: Optional[bool]                    # best_failed < failed_tests_attempt1 (if both known)
+    improve_any: bool                           # True iff best_failed < first failed count
+    improve_frac: Optional[float]               # (failed1 - best)/failed1 (if failed1>0)
+    thrash_failcurve: bool                      # oscillation on failed-count curve
+    tier: str
+
 
 
 def _derive_from_steps(
     run_row: Dict[str, Any],
     step_rows: List[Dict[str, Any]],
 ) -> RunDerived:
-    run_id = run_row["run_id"]
+    run_id = str(run_row.get("run_id", ""))
     model_id = str(run_row.get("model_id", ""))
     variant_id = str(run_row.get("variant_id", ""))
     task_id = str(run_row.get("task_id", ""))
     category = run_row.get("category")
     topic = run_row.get("topic")
-
+    tier = _task_tier(task_id)
     # sort steps by step_id
     step_rows = sorted(step_rows, key=lambda r: int(r.get("step_id", 0)))
 
@@ -122,30 +191,48 @@ def _derive_from_steps(
     test_steps = [s for s in step_rows if s.get("step_type") == "test"]
     fix_steps = [s for s in step_rows if s.get("step_type") == "code_fix"]
 
+    # ---- fail curve + progress metrics ----
+    fc = _fail_curve(step_rows)
+    failed_tests_attempt1: Optional[int] = fc[0] if fc else None
+
+    fc_numeric = [x for x in fc if isinstance(x, int)]
+    best_failed: Optional[int] = min(fc_numeric) if fc_numeric else None
+
+    improved: Optional[bool] = None
+    if isinstance(failed_tests_attempt1, int) and isinstance(best_failed, int):
+        improved = (best_failed < failed_tests_attempt1)
+
+    improve_any = bool(improved) if isinstance(improved, bool) else False
+
+    improve_frac: Optional[float] = None
+    if isinstance(failed_tests_attempt1, int) and isinstance(best_failed, int) and failed_tests_attempt1 > 0:
+        improve_frac = (failed_tests_attempt1 - best_failed) / float(failed_tests_attempt1)
+
+    thrash_failcurve = _oscillation(fc)
+
     # --- first pass (test attempt index) ---
     first_pass_test_attempt: Optional[int] = None
-    failed_tests_attempt1: Optional[int] = None
-
     attempt_idx = 0
     for ts in test_steps:
         attempt_idx += 1
         exit_code = ts.get("exit_code")
-
-        if attempt_idx == 1:
-            failed_tests_attempt1 = _parse_failed_count(ts.get("stdout", ""), ts.get("stderr", ""))
-
         if exit_code == 0 and first_pass_test_attempt is None:
             first_pass_test_attempt = attempt_idx
 
     # --- first pass (fix attempt index) ---
-    # Map a passing test attempt -> number of fixes that must have happened before it.
-    # If starter exists: test attempt #1 is starter check => 0 fixes.
-    # So: fix_attempt = test_attempt - 1
-    # If no starter: test attempt #1 can pass without any fix => 0 fixes.
-    # So: fix_attempt = test_attempt - 1 as well (still works).
     first_pass_fix_attempt: Optional[int] = None
     if first_pass_test_attempt is not None:
         first_pass_fix_attempt = max(0, first_pass_test_attempt - 1)
+
+    # --- overall success ---
+    # Prefer run_row["success"] if present; else infer from whether any test passed.
+    success_raw = run_row.get("success", None)
+    if isinstance(success_raw, int):
+        success = 1 if success_raw != 0 else 0
+    elif isinstance(success_raw, bool):
+        success = 1 if success_raw else 0
+    else:
+        success = 1 if first_pass_test_attempt is not None else 0
 
     # --- rewrite rejected? ---
     rewrite_rejected = False
@@ -156,12 +243,8 @@ def _derive_from_steps(
             rewrite_rejected = True
             break
 
-    # --- thrash detection ---
-    # thrash=True if we observe:
-    #   code_fix.meta.no_change == True
-    #   AND the *next* test still fails (exit_code != 0)
+    # --- thrash (meta.no_change-based) ---
     thrash = False
-    # build quick index by step_id
     by_step_id = {int(s.get("step_id", 0)): s for s in step_rows if "step_id" in s}
     for s in fix_steps:
         meta = s.get("meta") or {}
@@ -176,7 +259,7 @@ def _derive_from_steps(
                 thrash = True
                 break
 
-    # --- Latencies for LLM actions only ---
+    # --- LLM step latencies ---
     llm_latencies_ms: List[int] = []
     for s in step_rows:
         st = s.get("step_type")
@@ -193,6 +276,7 @@ def _derive_from_steps(
         task_id=task_id,
         category=category,
         topic=topic,
+        success=success,
         has_starter=has_starter,
         first_pass_test_attempt=first_pass_test_attempt,
         first_pass_fix_attempt=first_pass_fix_attempt,
@@ -201,54 +285,24 @@ def _derive_from_steps(
         rewrite_rejected=rewrite_rejected,
         thrash=thrash,
         llm_latencies_ms=llm_latencies_ms,
+        failed_counts_by_test=fc,
+        best_failed=best_failed,
+        improved=improved,
+        improve_any=improve_any,
+        improve_frac=improve_frac,
+        thrash_failcurve=thrash_failcurve,
+        tier=tier,
     )
 
 
-
 # -----------------------------
-# Aggregation
+# Aggregation helpers
 # -----------------------------
 
 @dataclass
 class Args:
     run_dirs: List[str]
     k_values: Tuple[int, ...] = (1, 2, 3, 4)
-
-
-def _pass_at_k(rs: List[RunDerived], k: int, *, which: str = "test") -> Optional[float]:
-    """
-    which: "test" uses first_pass_test_attempt
-           "fix"  uses first_pass_fix_attempt
-    """
-    if not rs:
-        return None
-    num = 0
-    for r in rs:
-        if which == "fix":
-            a = r.first_pass_fix_attempt
-        else:
-            a = r.first_pass_test_attempt
-        if a is not None and a <= k:
-            num += 1
-    return num / len(rs)
-
-
-def _median_attempts_to_pass(rs: List[RunDerived], *, which: str = "test") -> Optional[float]:
-    xs = []
-    for r in rs:
-        a = r.first_pass_fix_attempt if which == "fix" else r.first_pass_test_attempt
-        if a is not None:
-            xs.append(a)
-    if not xs:
-        return None
-    return float(statistics.median(xs))
-
-
-def _median_failed_tests_attempt1(rs: List[RunDerived]) -> Optional[float]:
-    xs = [r.failed_tests_attempt1 for r in rs if r.failed_tests_attempt1 is not None]
-    if not xs:
-        return None
-    return float(statistics.median(xs))
 
 
 def _rate(preds: Iterable[bool]) -> Optional[float]:
@@ -258,6 +312,92 @@ def _rate(preds: Iterable[bool]) -> Optional[float]:
     return sum(1 for x in preds if x) / len(preds)
 
 
+def _pass_at_k(rs: List[RunDerived], k: int, *, which: str = "fix") -> Optional[float]:
+    """
+    which: "test" uses first_pass_test_attempt
+           "fix"  uses first_pass_fix_attempt
+    """
+    if not rs:
+        return None
+    num = 0
+    for r in rs:
+        a = r.first_pass_fix_attempt if which == "fix" else r.first_pass_test_attempt
+        if a is not None and a <= k:
+            num += 1
+    return num / len(rs)
+
+
+def _median_attempts_to_pass(rs: List[RunDerived], *, which: str = "fix") -> Optional[float]:
+    xs: List[int] = []
+    for r in rs:
+        a = r.first_pass_fix_attempt if which == "fix" else r.first_pass_test_attempt
+        if isinstance(a, int):
+            xs.append(a)
+    if not xs:
+        return None
+    return float(statistics.median(xs))
+
+
+def _median_failed_tests_attempt1(rs: List[RunDerived]) -> Optional[float]:
+    xs = [r.failed_tests_attempt1 for r in rs if isinstance(r.failed_tests_attempt1, int)]
+    if not xs:
+        return None
+    return float(statistics.median(xs))
+
+
+def _median_best_failed(rs: List[RunDerived]) -> Optional[float]:
+    xs = [r.best_failed for r in rs if isinstance(r.best_failed, int)]
+    if not xs:
+        return None
+    return float(statistics.median(xs))
+
+
+def _improve_rate(rs: List[RunDerived]) -> Optional[float]:
+    xs = [r.improved for r in rs if isinstance(r.improved, bool)]
+    if not xs:
+        return None
+    return sum(1 for x in xs if x) / len(xs)
+
+
+def _median_improve_frac(rs: List[RunDerived]) -> Optional[float]:
+    xs = [r.improve_frac for r in rs if isinstance(r.improve_frac, float)]
+    if not xs:
+        return None
+    return float(statistics.median(xs))
+
+
+def _filter_failed_runs(rs: List[RunDerived]) -> List[RunDerived]:
+    return [r for r in rs if r.success == 0]
+
+
+def _median_best_failed_failed_only(rs: List[RunDerived]) -> Optional[float]:
+    failed = _filter_failed_runs(rs)
+    xs = [r.best_failed for r in failed if isinstance(r.best_failed, int)]
+    if not xs:
+        return None
+    return float(statistics.median(xs))
+
+
+def _improve_rate_failed_only(rs: List[RunDerived]) -> Optional[float]:
+    failed = _filter_failed_runs(rs)
+    xs = [r.improved for r in failed if isinstance(r.improved, bool)]
+    if not xs:
+        return None
+    return sum(1 for x in xs if x) / len(xs)
+
+
+def _median_improve_frac_failed_only(rs: List[RunDerived]) -> Optional[float]:
+    failed = _filter_failed_runs(rs)
+    xs = [r.improve_frac for r in failed if isinstance(r.improve_frac, float)]
+    if not xs:
+        return None
+    return float(statistics.median(xs))
+
+
+# -----------------------------
+# Summarize
+# -----------------------------
+
 def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[str, Any]]:
     runs_path = run_dir / "fact_run.jsonl"
     steps_path = run_dir / "fact_step.jsonl"
@@ -265,25 +405,20 @@ def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[st
     runs = _read_jsonl(runs_path)
     steps = _read_jsonl(steps_path)
 
-    # Map run_id -> steps
     steps_by_run: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for s in steps:
         rid = s.get("run_id")
         if rid:
             steps_by_run[str(rid)].append(s)
 
-    # Derive per-run metrics
     derived: List[RunDerived] = []
     for r in runs:
         rid = r.get("run_id")
         if not rid:
             continue
-        rid = str(rid)
-        d = _derive_from_steps(r, steps_by_run.get(rid, []))
+        d = _derive_from_steps(r, steps_by_run.get(str(rid), []))
         derived.append(d)
 
-    # Group by (model, variant) — in your sweep this is usually 1 model + 1 variant per folder,
-    # but this supports multiple variants in a single run dir too.
     by_mv: Dict[Tuple[str, str], List[RunDerived]] = defaultdict(list)
     for d in derived:
         by_mv[(d.model_id, d.variant_id)].append(d)
@@ -291,51 +426,66 @@ def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[st
     out_rows: List[Dict[str, Any]] = []
 
     for (model_id, variant_id), rs in sorted(by_mv.items()):
-        # categories
         bugfix = [r for r in rs if r.category == "bugfix"]
         stab = [r for r in rs if r.category == "stability_noop"]
         hang = [r for r in rs if r.category == "hang_timeout"]
 
-        # rewrite rate (behavior)
         rewrite_rate = _rate(r.rewrite_rejected for r in rs)
 
-        # latency stats (LLM step latency, not full wall clock)
-        lat_all = []
+        lat_all: List[int] = []
         for r in rs:
             lat_all.extend(r.llm_latencies_ms)
         lat_p50 = _percentile([float(x) for x in lat_all], 50) if lat_all else None
         lat_p95 = _percentile([float(x) for x in lat_all], 95) if lat_all else None
 
-        # bugfix pass@k (TEST-attempt based; keep if you want)
-        bugfix_pass_test = {k: _pass_at_k(bugfix, k, which="test") for k in k_values}
+        # --- Tier stats (Option A) ---
+        tiers: Dict[str, List[RunDerived]] = defaultdict(list)
+        for r in bugfix:
+            tiers[_task_tier(r.task_id)].append(r)
 
-        # bugfix pass@k (FIX-attempt based; this is what you want for starter-code bugfix)
+        tier_rows: List[Dict[str, Any]] = []
+        for tier_name, trs in sorted(tiers.items()):
+            tr = {
+                "tier": tier_name,
+                "n": len(trs),
+                # keep it minimal: p@1 and p@4 (and medAtt) are usually enough
+                "p1": _pass_at_k(trs, 1, which="fix"),
+                "p4": _pass_at_k(trs, max(k_values) if k_values else 4, which="fix"),
+                "medAtt": _median_attempts_to_pass(trs, which="fix"),
+                "imprRate": _improve_rate(trs),
+                "thrash2": _rate(r.thrash_failcurve for r in trs),
+            }
+            tier_rows.append(tr)
+
+
+
         bugfix_pass_fix = {k: _pass_at_k(bugfix, k, which="fix") for k in k_values}
 
-        # extra bugfix discriminators (fix-attempt space)
         bugfix_med_attempts = _median_attempts_to_pass(bugfix, which="fix")
-
-        # First-fix success rate: passes after exactly 1 fix (i.e. first_pass_fix_attempt == 1)
-        bugfix_first_fix_success = _rate(
-            (r.first_pass_fix_attempt == 1) for r in bugfix
-        )
-
-        # Thrash rate: no_change while failing
+        bugfix_first_fix_success = _rate((r.first_pass_fix_attempt == 1) for r in bugfix)
         bugfix_thrash_rate = _rate(r.thrash for r in bugfix)
-
         bugfix_med_failed1 = _median_failed_tests_attempt1(bugfix)
 
-        # stability regression = 1 - pass rate (but stability tasks "should pass")
-        stab_pass_at1 = _pass_at_k(stab, 1)  # stability should pass immediately if starter is correct
+        # “progress” columns (these will collapse if most tasks pass)
+        bugfix_best_failed_med = _median_best_failed(bugfix)
+        bugfix_improve_rate = _improve_rate(bugfix)
+        bugfix_improve_frac_med = _median_improve_frac(bugfix)
+        bugfix_thrash_curve_rate = _rate(r.thrash_failcurve for r in bugfix)
+
+        # FAILED-ONLY versions (these are what you want for model separation)
+        bugfix_best_failed_med_F = _median_best_failed_failed_only(bugfix)
+        bugfix_improve_rate_F = _improve_rate_failed_only(bugfix)
+        bugfix_improve_frac_med_F = _median_improve_frac_failed_only(bugfix)
+
+        stab_pass_at1 = _pass_at_k(stab, 1, which="test")
         stab_reg = None if stab_pass_at1 is None else (1.0 - stab_pass_at1)
 
-        # hang recovery = pass@k (use largest k in k_values as your overall recovery)
         k_max = max(k_values) if k_values else 1
-        hang_rec = _pass_at_k(hang, k_max)
+        hang_rec = _pass_at_k(hang, k_max, which="test")
 
-        row = {
+        row: Dict[str, Any] = {
             "run_tag": run_dir.name,
-            "model": model_id[:28] if model_id else "",
+            "model": (model_id[:28] if model_id else ""),
             "var": variant_id,
             "bugfix_n": len(bugfix),
             "stab_n": len(stab),
@@ -345,25 +495,36 @@ def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[st
             "lat_p95_ms": int(lat_p95) if lat_p95 is not None else None,
             "bugfix_med_attempts": bugfix_med_attempts,
             "bugfix_med_failed1": bugfix_med_failed1,
-            "stab_reg": stab_reg,
-            "hang_rec": hang_rec,
             "bugfix_first_fix": bugfix_first_fix_success,
             "bugfix_thrash": bugfix_thrash_rate,
+            "bugfix_best_failed_med": bugfix_best_failed_med,
+            "bugfix_improve_rate": bugfix_improve_rate,
+            "bugfix_improve_frac_med": bugfix_improve_frac_med,
+            "bugfix_thrash_curve": bugfix_thrash_curve_rate,
+            # failed-only
+            "bugfix_best_failed_med_F": bugfix_best_failed_med_F,
+            "bugfix_improve_rate_F": bugfix_improve_rate_F,
+            "bugfix_improve_frac_med_F": bugfix_improve_frac_med_F,
+            "stab_reg": stab_reg,
+            "hang_rec": hang_rec,
+            "tier_table": tier_rows,
 
         }
         for k in k_values:
             row[f"bugfix_fix_p@{k}"] = bugfix_pass_fix[k]
-            # optional: keep old test-based too
-            row[f"bugfix_test_p@{k}"] = bugfix_pass_test[k]
         out_rows.append(row)
 
     return out_rows
 
 
+# -----------------------------
+# Printing
+# -----------------------------
+
 def _fmt_pct(x: Optional[float]) -> str:
     if x is None:
         return "  n/a "
-    return f"{100.0*x:5.1f}%"
+    return f"{100.0 * x:5.1f}%"
 
 
 def _fmt_num(x: Optional[float], width: int = 7, nd: int = 1) -> str:
@@ -385,7 +546,7 @@ def main(args: Args) -> None:
         print("No runs found.")
         return
 
-    # Sanity check: make sure expected keys exist
+    # Strict required keys
     required = [
         "run_tag", "model", "var",
         "bugfix_n", "stab_n", "hang_n",
@@ -393,6 +554,14 @@ def main(args: Args) -> None:
         "lat_p50_ms", "lat_p95_ms",
         "bugfix_med_attempts", "bugfix_med_failed1",
         "bugfix_first_fix", "bugfix_thrash",
+        "bugfix_best_failed_med",
+        "bugfix_improve_rate",
+        "bugfix_improve_frac_med",
+        "bugfix_thrash_curve",
+        # failed-only
+        "bugfix_best_failed_med_F",
+        "bugfix_improve_rate_F",
+        "bugfix_improve_frac_med_F",
     ]
     for k in args.k_values:
         required.append(f"bugfix_fix_p@{k}")
@@ -402,16 +571,17 @@ def main(args: Args) -> None:
         if missing:
             raise KeyError(f"Missing keys in row for run_tag={r.get('run_tag')}: {missing}")
 
-        # rate sanity checks
-        for rk in ["stab_reg", "hang_rec", "rewrite", "bugfix_first_fix", "bugfix_thrash"] + [f"bugfix_fix_p@{k}" for k in args.k_values]:
+        for rk in ["stab_reg", "hang_rec", "rewrite", "bugfix_first_fix", "bugfix_thrash",
+                   "bugfix_improve_rate", "bugfix_thrash_curve",
+                   "bugfix_improve_rate_F"] + [f"bugfix_fix_p@{k}" for k in args.k_values]:
             v = r.get(rk)
             if v is None:
                 continue
             if not (0.0 <= float(v) <= 1.0):
                 raise ValueError(f"Bad rate {rk}={v} in run_tag={r.get('run_tag')}")
 
-    # Header
     k_cols = "  ".join([f"fix_p@{k}" for k in args.k_values])
+
     print("\n=== Ablation Summary (per run folder) ===")
     print(
         "run_tag".ljust(44),
@@ -421,6 +591,13 @@ def main(args: Args) -> None:
         k_cols.rjust(7 * len(args.k_values)),
         "medAtt".rjust(8),
         "medFail1".rjust(9),
+        "bestFail".rjust(8),
+        "imprRate".rjust(8),
+        "imprFrac".rjust(8),
+        "thrash2".rjust(8),
+        "bestF_F".rjust(8),
+        "imprR_F".rjust(8),
+        "imprF_F".rjust(8),
         "firstFix".rjust(9),
         "thrash".rjust(8),
         "stab_reg".rjust(9),
@@ -430,7 +607,7 @@ def main(args: Args) -> None:
         "lat_p95".rjust(9),
         sep="  ",
     )
-    print("-" * 160)
+    print("-" * 190)
 
     for r in all_rows:
         bugfix_pcts = "  ".join(_fmt_pct(r[f"bugfix_fix_p@{k}"]) for k in args.k_values)
@@ -442,6 +619,13 @@ def main(args: Args) -> None:
             bugfix_pcts,
             _fmt_num(r["bugfix_med_attempts"], width=8, nd=2),
             _fmt_num(r["bugfix_med_failed1"], width=9, nd=1),
+            _fmt_num(r["bugfix_best_failed_med"], width=8, nd=1),
+            _fmt_pct(r["bugfix_improve_rate"]).rjust(8),
+            _fmt_num(r["bugfix_improve_frac_med"], width=8, nd=2),
+            _fmt_pct(r["bugfix_thrash_curve"]).rjust(8),
+            _fmt_num(r["bugfix_best_failed_med_F"], width=8, nd=1),
+            _fmt_pct(r["bugfix_improve_rate_F"]).rjust(8),
+            _fmt_num(r["bugfix_improve_frac_med_F"], width=8, nd=2),
             _fmt_pct(r["bugfix_first_fix"]).rjust(9),
             _fmt_pct(r["bugfix_thrash"]).rjust(8),
             _fmt_pct(r["stab_reg"]).rjust(9),
@@ -452,6 +636,38 @@ def main(args: Args) -> None:
             sep="  ",
         )
 
+    # -----------------------------
+    # Option A: Tier-wise table per run folder
+    # -----------------------------
+    for r in all_rows:
+        tier_table = r.get("tier_table") or []
+        if not tier_table:
+            continue
+
+        print("\n--- Tier breakdown:", r["run_tag"], "|", r["model"], "|", r["var"], "---")
+        print(
+            "tier".ljust(8),
+            "n".rjust(4),
+            "fix_p@1".rjust(9),
+            f"fix_p@{max(args.k_values)}".rjust(9),
+            "medAtt".rjust(8),
+            "imprRate".rjust(9),
+            "thrash2".rjust(9),
+            sep="  ",
+        )
+        print("-" * 70)
+
+        for tr in tier_table:
+            print(
+                str(tr["tier"]).ljust(8),
+                f"{int(tr['n']):4d}",
+                _fmt_rate(tr.get("p1")).rjust(9),
+                _fmt_rate(tr.get("p4")).rjust(9),
+                _fmt_num(tr.get("medAtt"), width=8, nd=2),
+                _fmt_rate(tr.get("imprRate")).rjust(9),
+                _fmt_rate(tr.get("thrash2")).rjust(9),
+                sep="  ",
+            )
 
 
 if __name__ == "__main__":

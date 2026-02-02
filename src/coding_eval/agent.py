@@ -60,6 +60,7 @@ class LLMAgent:
             "You are a careful Python coding assistant.\n"
             "Use Python standard library only. Do NOT import third-party packages.\n"
             "Return ONLY valid Python code. No markdown, no explanations.\n"
+            "Before emitting final code, think through which test is failing and why. Then output only code.\n"
         )
 
         if self.variant == "A_naive":
@@ -92,6 +93,7 @@ class LLMAgent:
             "You are a careful Python coding assistant.\n"
             "Use Python standard library only. Do NOT import third-party packages.\n"
             "Return ONLY valid Python code. No markdown, no explanations.\n"
+            "Before emitting final code, think through which test is failing and why. Then output only code.\n"
         )
 
         if self.variant == "A_naive":

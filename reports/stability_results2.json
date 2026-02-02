@@ -1,0 +1,72 @@
+{
+  "oscillation_q6_codegemma_7b_it": {
+    "tier": "oscillation",
+    "quantization": "q6",
+    "model": "codegemma_7b_it",
+    "n_runs": 12,
+    "success_rate": 0.8333333333333334,
+    "thrash_rate": 0.0,
+    "stuck_rate": 0.08333333333333333,
+    "avg_oscillations": 0,
+    "avg_regressions": 0,
+    "avg_decisions": 1.1666666666666667,
+    "med_latency_ms": 8639.0,
+    "avg_approach_osc": 0
+  },
+  "oscillation_q6_deepseek_coder_6_7b_instruct": {
+    "tier": "oscillation",
+    "quantization": "q6",
+    "model": "deepseek_coder_6_7b_instruct",
+    "n_runs": 12,
+    "success_rate": 0.8333333333333334,
+    "thrash_rate": 0.0,
+    "stuck_rate": 0.08333333333333333,
+    "avg_oscillations": 0,
+    "avg_regressions": 0,
+    "avg_decisions": 1.1666666666666667,
+    "med_latency_ms": 7682.0,
+    "avg_approach_osc": 0
+  },
+  "oscillation_q6_z_qwen2_5_coder_3b_instruct_q6_k": {
+    "tier": "oscillation",
+    "quantization": "q6",
+    "model": "z_qwen2_5_coder_3b_instruct_q6_k",
+    "n_runs": 13,
+    "success_rate": 0.8461538461538461,
+    "thrash_rate": 0.0,
+    "stuck_rate": 0.07692307692307693,
+    "avg_oscillations": 0,
+    "avg_regressions": 0,
+    "avg_decisions": 1.1538461538461537,
+    "med_latency_ms": 6039,
+    "avg_approach_osc": 0
+  },
+  "oscillation_q6_z_qwen2_5_coder_7b_instruct_q6_k": {
+    "tier": "oscillation",
+    "quantization": "q6",
+    "model": "z_qwen2_5_coder_7b_instruct_q6_k",
+    "n_runs": 10,
+    "success_rate": 0.9,
+    "thrash_rate": 0.0,
+    "stuck_rate": 0.1,
+    "avg_oscillations": 0,
+    "avg_regressions": 0,
+    "avg_decisions": 1.2,
+    "med_latency_ms": 3722.0,
+    "avg_approach_osc": 0
+  },
+  "oscillation_q4_z_qwen2_5_coder_7b_instruct_q4_k_m": {
+    "tier": "oscillation",
+    "quantization": "q4",
+    "model": "z_qwen2_5_coder_7b_instruct_q4_k_m",
+    "n_runs": 13,
+    "success_rate": 0.8461538461538461,
+    "thrash_rate": 0.0,
+    "stuck_rate": 0.07692307692307693,
+    "avg_oscillations": 0,
+    "avg_regressions": 0,
+    "avg_decisions": 1.1538461538461537,
+    "med_latency_ms": 9397,
+    "avg_approach_osc": 0
+  }
+}

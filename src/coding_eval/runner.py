@@ -10,7 +10,7 @@ from agent import LLMAgent, VariantId
 from sandbox import run_pytest
 from schema import StepLog, RunLog, now_ms, new_id
 from llm import LLMConfig
-
+from approach_classifier import classify_approach
 
 def classify_failure(stderr: str, stdout: str, exit_code: int) -> Optional[str]:
     if exit_code == 0:
@@ -98,7 +98,12 @@ def run_suite(
                     exit_code=None,
                     started_ms=now_ms(),
                     ended_ms=now_ms(),
-                    meta={"category": getattr(t, "category", None), "topic": getattr(t, "topic", None), "starter_check": getattr(t, "starter_check", None)},
+                    meta={
+                        "category": getattr(t, "category", None),
+                        "topic": getattr(t, "topic", None),
+                        "starter_check": getattr(t, "starter_check", None),
+                        "approach_class": classify_approach(code, t.task_id),
+                    },
                 ).to_json()
                 + "\n"
             )
@@ -297,6 +302,8 @@ def run_suite(
                 "churn_ratio": churn_ratio,
                 "category": getattr(t, "category", None),
                 "topic": getattr(t, "topic", None),
+                "approach_class": classify_approach(new_code, t.task_id),
+                "prev_approach_class": classify_approach(prev_code, t.task_id),
             }
             
             no_change = new_code.strip() == prev_code.strip()
