@@ -7,7 +7,7 @@ Do small-scale code models exhibit path dependence (decision rigidity) under ite
 
 Results reported here were computed on Feb 4, 2026 using `runs/yyy_*`, `runs/zzz_*`, and `runs/temp2_*`.
 
-## Key Findings (Skimmable)
+## Key Findings
 
 - Zero approach oscillation (A->B->A) observed across 910 decisions in v11.
 - Extra attempts (2-4) yield only ~1-3pp success gain over attempt 1 in v9.
@@ -44,6 +44,7 @@ Results reported here were computed on Feb 4, 2026 using `runs/yyy_*`, `runs/zzz
 Observed wall time (this machine):
 - 5-model ablation: ~3 hours
 - Single model run: ~30 minutes
+- Total ~15 runs completed over 6 days
 
 Electricity cost was not estimated.
 
@@ -227,6 +228,9 @@ These limitations are fundamental to the current results and are explicitly ackn
 ## Reproduction
 
 ### Windows (PowerShell)
+
+- The following scripts assume you've already loaded your model into the llama.cpp host. You can run the tasks with any model, but my base model was Qwen 2.5 Coder Instruct 7b Q6_K. 
+- If you have multiple models you would like to run you can instead use / edit run_ablations.ps1 and point it to your folder that has all your local models.
 
 ```
 python src/coding_eval/run_eval.py ^
