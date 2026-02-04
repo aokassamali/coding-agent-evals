@@ -9,10 +9,11 @@ Results reported here were computed on Feb 4, 2026 using `runs/yyy_*`, `runs/zzz
 
 ## Key Findings
 
-- Zero approach oscillation (A->B->A) observed across 910 decisions in v11.
-- Extra attempts (2-4) yield only ~1-3pp success gain over attempt 1 in v9.
-- Strategy perturbation did not recover stuck failures (0/33).
-- Temperature sensitivity: a single T=0.2 run achieved 100% success vs 83.5% at T=0.0.
+- **Under deterministic decoding (T=0.0) and the current harness/guardrails**, we observed **zero approach oscillation (A→B→A)** across **910 approach decisions** on **v11**.
+- **In v9 at T=0.0**, additional attempts (**2–4**) add only **~1–3 percentage points** of success over attempt 1.
+- **On the 33 v11 failures for Qwen2.5 Coder 7B (Q6_K)**, a **prompt-only strategy perturbation** recovered **0/33**; remaining failures were largely constrained by guardrail outcomes (e.g., `no_progress`, `rewrite_too_large`).
+- **Temperature sensitivity (single run; not replicated):** at **T=0.2**, v11 success reached **100%** vs **83.5%** at **T=0.0**, and observed switching increased—suggesting decoding stochasticity can materially change “rigidity” signals in this setup.
+
 
 ## What This Project Does
 
@@ -116,9 +117,23 @@ Survival / entrenchment (from `multi_model_analysis.py`):
 - Kaplan-Meier hazard by attempt
 - Decreasing hazard suggests entrenchment (probability of success declines)
 
+**Standard error:** For binomial proportions, SE = sqrt(p(1-p)/n), with n=200 unless otherwise noted.
+
 ## Classifier Validation (Sanity Check)
 
-We do not yet have a formal manual audit. As an automatic consistency check on v11, **685/685 code-fix decisions** that had explicit ground-truth `approaches` lists matched the allowed list. The remaining 225 decisions used heuristic-only labels. This is a sanity check, not a proof of ground-truth correctness.
+We do not yet have an exhaustive manual audit. As an automatic consistency check on v11, **685/685 code-fix decisions** that had explicit ground-truth `approaches` lists matched the allowed list. The remaining 225 decisions used heuristic-only labels. This is a sanity check, not a proof of ground-truth correctness.
+
+### Manual Audit
+
+To validate the heuristic classifier, we sampled 50 random decisions from v11 and manually labeled approaches blind to the classifier output.
+
+| Metric | Value |
+|---|---|
+| Sample size | 50 |
+| Agreement | 100% |
+| Cohen's kappa | 1.00 |
+
+This audit was performed by the author based on code inspection without viewing heuristic labels. The raw sample and labels are available in `data/results/manual_audit_v11_samples.jsonl` and `data/results/manual_audit_v11_labels.jsonl`. The perfect agreement likely reflects the fact that v11 tasks are intentionally separable and the classifier keys off obvious code cues; it should not be read as general validation for harder or less structured tasks.
 
 ## Results
 
@@ -128,11 +143,11 @@ Aggregate metrics:
 
 | Model | fix_p@1 | fix_p@4 | medAtt | rewrite_too_large | lat_p50 (ms) |
 |---|---:|---:|---:|---:|---:|
-| CodeGemma 7B IT Q6_K | 81.0% | 82.0% | 1.00 | 3.5% | 3275 |
-| DeepSeek Coder 6.7B Q6_K | 83.0% | 83.5% | 1.00 | 1.5% | 4400 |
-| Qwen2.5 Coder 3B Q6_K | 80.5% | 82.0% | 1.00 | 3.0% | 4644 |
-| Qwen2.5 Coder 7B Q4_K_M | 84.0% | 84.0% | 1.00 | 3.0% | 4207 |
-| Qwen2.5 Coder 7B Q6_K | 81.5% | 84.0% | 1.00 | 1.5% | 5146 |
+| CodeGemma 7B IT Q6_K | 81.0% +/- 2.8% | 82.0% +/- 2.7% | 1.00 | 3.5% | 3275 |
+| DeepSeek Coder 6.7B Q6_K | 83.0% +/- 2.7% | 83.5% +/- 2.6% | 1.00 | 1.5% | 4400 |
+| Qwen2.5 Coder 3B Q6_K | 80.5% +/- 2.8% | 82.0% +/- 2.7% | 1.00 | 3.0% | 4644 |
+| Qwen2.5 Coder 7B Q4_K_M | 84.0% +/- 2.6% | 84.0% +/- 2.6% | 1.00 | 3.0% | 4207 |
+| Qwen2.5 Coder 7B Q6_K | 81.5% +/- 2.7% | 84.0% +/- 2.6% | 1.00 | 1.5% | 5146 |
 
 Tier ranges across models:
 
@@ -161,17 +176,19 @@ Approach detection coverage: 100% on 910 decisions.
 
 | Model | Success | Switch rate | Early dev | Stuck | NoDec |
 |---|---:|---:|---:|---:|---:|
-| CodeGemma 7B IT Q6_K | 83.5% | 0.09/run | 16.7% | 3.0% | 8.0% |
-| DeepSeek Coder 6.7B Q6_K | 82.0% | 0.07/run | 13.3% | 2.5% | 9.5% |
-| Qwen2.5 Coder 3B Q6_K | 83.0% | 0.09/run | 15.9% | 4.0% | 8.5% |
-| Qwen2.5 Coder 7B Q4_K_M | 83.5% | 0.08/run | 15.0% | 3.0% | 8.5% |
-| Qwen2.5 Coder 7B Q6_K | 83.5% | 0.09/run | 15.7% | 3.5% | 8.0% |
+| CodeGemma 7B IT Q6_K | 83.5% +/- 2.6% | 0.09/run | 16.7% | 3.0% | 8.0% |
+| DeepSeek Coder 6.7B Q6_K | 82.0% +/- 2.7% | 0.07/run | 13.3% | 2.5% | 9.5% |
+| Qwen2.5 Coder 3B Q6_K | 83.0% +/- 2.7% | 0.09/run | 15.9% | 4.0% | 8.5% |
+| Qwen2.5 Coder 7B Q4_K_M | 83.5% +/- 2.6% | 0.08/run | 15.0% | 3.0% | 8.5% |
+| Qwen2.5 Coder 7B Q6_K | 83.5% +/- 2.6% | 0.09/run | 15.7% | 3.5% | 8.0% |
 
 Approach oscillation (A->B->A) remained 0 across all models. Hazard rates decreased over attempts, consistent with entrenchment within this harness.
 
 ### Kaplan-Meier survival curves (v11)
 
 ![Kaplan-Meier survival curves](data/results/plots/kaplan_meier_v11.svg)
+
+**Interpretation caveat:** Decreasing hazard over attempts is consistent with entrenchment but also consistent with task-level selection effects: if easier tasks are solved on early attempts, the remaining pool is harder by construction. These interpretations are not mutually exclusive, and the current design cannot distinguish them.
 
 ### Intervention testing (strategy perturbation, failed subset)
 
@@ -200,14 +217,16 @@ Single model: Qwen2.5 7B Q6_K on v11.
 
 This is a single run and should not be over-interpreted. It demonstrates that temperature shifts dynamics materially.
 
-## Interpretation (bounded)
+## Discussion
 
 - The harness detects low approach switching in deterministic runs.
 - Guardrails are a major source of failure modes in the hardest tasks.
 - The oscillation suite does not yet induce A->B->A behavior under deterministic settings.
 - Temperature affects both success and switching, but this is not yet characterized systematically.
 
-## Limitations (explicit)
+**Temperature hypothesis.** The T=0.2 result (100% success, 16.9% switch rate vs. 83.5% success, ~0.08 switch rate at T=0.0) suggests that apparent entrenchment may be partially or fully attributable to deterministic decoding rather than model-level strategy commitment. Under greedy decoding, a model that fails on attempt 1 will replay similar token sequences on subsequent attempts, mechanically producing low switching. Disambiguating "entrenchment as cognitive limitation" from "entrenchment as decoding artifact" requires temperature-controlled replication across multiple seeds, which is out of scope for this project but represents a natural follow-up.
+
+## Limitations 
 
 - Synthetic tasks only; no external benchmarks.
 - Approach detection is heuristic, not ground truth.
@@ -215,22 +234,46 @@ This is a single run and should not be over-interpreted. It demonstrates that te
 - Guardrails constrain what constitutes "progress."
 - Limited replication and no temperature sweep.
 - Hardware limits model size, context, and experiment scale.
+- Classifier validation is partial. The heuristic classifier was sanity-checked against allowed approach lists, and a 50-sample manual audit showed 100% agreement (kappa 1.00). This is still single-rater and limited in scope.
+- Temperature confound is unresolved. A single T=0.2 run suggests temperature materially affects both success and switching, but this project does not include a systematic temperature sweep. Entrenchment findings apply to deterministic (T=0.0) settings only.
 
 These limitations are fundamental to the current results and are explicitly acknowledged here.
 
-## Related Work (brief)
+## Threats to Validity
 
-- Madaan et al., "Self-Refine: Iterative Refinement with Self-Feedback" (arXiv:2303.17651): https://arxiv.org/abs/2303.17651
-- Shinn et al., "Reflexion: Language Agents with Verbal Reinforcement Learning" (arXiv:2303.11366): https://arxiv.org/abs/2303.11366
-- Gou et al., "CRITIC: Large Language Models Can Self-Correct with Critique" (arXiv:2305.11738): https://arxiv.org/abs/2305.11738
-- Wang et al., "Self-Consistency Improves Chain of Thought Reasoning" (arXiv:2203.11171): https://arxiv.org/abs/2203.11171
+**Internal validity:**
+- Guardrails (`no_progress`, `rewrite_too_large`) mechanically prevent certain fix attempts, confounding "model won't change approach" with "harness rejected the change." The intervention results (0/33 recovery, dominated by guardrail rejections) illustrate this limitation.
+- Deterministic decoding at T=0.0 may produce low switching as a mechanical artifact rather than a model property. The single T=0.2 run suggests this is a real concern.
+- With `max_attempts=4`, there are only 3 opportunities to observe approach changes, limiting power to detect oscillation patterns.
+
+**External validity:**
+- All tasks are synthetic and stdlib-only; generalization to real-world codebases or external benchmarks (e.g., SWE-bench, HumanEval) is unknown.
+- Models tested are 3B-7B parameter local models under 4096 context; findings may not transfer to larger frontier models or longer contexts.
+- Guardrail settings are arbitrary and would affect results if changed.
+
+## Future Work
+
+- Temperature-controlled replication across multiple seeds to separate decoding artifacts from model-level entrenchment.
+- External benchmark validation (e.g., SWE-bench or HumanEval subsets) to test generalization beyond synthetic tasks.
+- Scale effects: evaluate larger models (13B+) or longer contexts to see whether entrenchment diminishes with capability.
+
+## Related Work
+
+This project builds on the growing literature on LLM self-refinement:
+
+- **Madaan et al., "Self-Refine"** (arXiv:2303.17651): Iterative refinement with self-feedback on larger models (GPT-3.5/4). Our work differs in focusing on small local models (3B-7B) and measuring approach switching rather than output quality.
+- **Shinn et al., "Reflexion"** (arXiv:2303.11366): Verbal reinforcement learning with explicit memory. Our harness does not provide cross-attempt memory, which may contribute to observed entrenchment.
+- **Gou et al., "CRITIC"** (arXiv:2305.11738): Self-correction with external tool feedback. Our feedback is limited to test pass/fail signals.
+- **Wang et al., "Self-Consistency"** (arXiv:2203.11171): Sampling multiple reasoning paths and marginalizing. Our deterministic (T=0.0) setting eliminates this mechanism by design.
+
+A key difference from prior work is our focus on **strategy-level** behavior (do models switch approaches?) rather than **output-level** improvement (do outputs get better?). Our findings suggest that under deterministic decoding, small models exhibit low approach switching, but this may not generalize to the stochastic, larger-model settings studied in prior work.
 
 ## Reproduction
 
 ### Windows (PowerShell)
 
-- The following scripts assume you've already loaded your model into the llama.cpp host. You can run the tasks with any model, but my base model was Qwen 2.5 Coder Instruct 7b Q6_K. 
-- If you have multiple models you would like to run you can instead use / edit run_ablations.ps1 and point it to your folder that has all your local models.
+- The following scripts assume you've already loaded your model into the llama.cpp host.
+- If you have multiple models, you can edit `run_ablations.ps1` and point it to your folder with local GGUF files.
 
 ```
 python src/coding_eval/run_eval.py ^
@@ -288,3 +331,5 @@ python src/coding_eval/audit_runs.py --run_dirs runs/yyy_* --tasks_path data/tas
 - Temp=0.2 run: `runs/temp2_qwen2_5_coder_7b_instruct_q6_k`
 - Multi-model results: `data/results/multi_model_results_zzz/`, `data/results/multi_model_results_temp2/`
 - Reports: `data/results/reports/`
+- Manual audit samples: `data/results/manual_audit_v11_samples.jsonl`
+- Manual audit labels: `data/results/manual_audit_v11_labels.jsonl`
