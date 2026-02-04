@@ -7,6 +7,13 @@ Do small-scale code models exhibit path dependence (decision rigidity) under ite
 
 Results reported here were computed on Feb 4, 2026 using `runs/yyy_*`, `runs/zzz_*`, and `runs/temp2_*`.
 
+## Key Findings (Skimmable)
+
+- Zero approach oscillation (A->B->A) observed across 910 decisions in v11.
+- Extra attempts (2-4) yield only ~1-3pp success gain over attempt 1 in v9.
+- Strategy perturbation did not recover stuck failures (0/33).
+- Temperature sensitivity: a single T=0.2 run achieved 100% success vs 83.5% at T=0.0.
+
 ## What This Project Does
 
 - Measures fix success across multiple attempts on two synthetic task suites.
@@ -110,7 +117,7 @@ Survival / entrenchment (from `multi_model_analysis.py`):
 
 ## Classifier Validation (Sanity Check)
 
-We do not yet have a formal manual audit. As an automatic consistency check on v11, **685/685 code-fix decisions** had detected approaches that were members of each task's declared `approaches` list. This is a sanity check, not a proof of ground-truth correctness.
+We do not yet have a formal manual audit. As an automatic consistency check on v11, **685/685 code-fix decisions** that had explicit ground-truth `approaches` lists matched the allowed list. The remaining 225 decisions used heuristic-only labels. This is a sanity check, not a proof of ground-truth correctness.
 
 ## Results
 
