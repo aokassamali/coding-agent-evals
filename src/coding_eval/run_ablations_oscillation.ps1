@@ -1,6 +1,6 @@
 # Config paths
 $MODEL_DIR = "C:\Users\aokas\localmodel"
-$TASKS_PATH = "data/tasks/v7_oscillationtasks.jsonl"
+$TASKS_PATH = "data/tasks/v11_osc_total_200.jsonl"
 $MAX_ATTEMPTS = 4
 $TIMEOUT_S = 3
 $VARIANTS = "B_debug"
@@ -13,7 +13,7 @@ $models = Get-ChildItem -Path $MODEL_DIR -Filter "*.gguf"
 foreach ($model in $models) {
     $rawName = $model.BaseName
     $modelId = $rawName -replace '[-\.]', '_'
-    $runTag = "zb_$modelId"
+    $runTag = "zz_$modelId"
     
     Write-Host "`n========================================" -ForegroundColor Green
     Write-Host "Testing: $rawName" -ForegroundColor Green

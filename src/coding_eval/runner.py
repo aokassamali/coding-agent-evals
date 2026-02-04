@@ -47,6 +47,16 @@ def run_suite(
     max_attempts: int = 3,
     timeout_s: int = 10,
     llm_base_url: str = "http://127.0.0.1:8080/v1",
+    temperature: float = 0.0,
+    reject_no_progress: bool = True,
+    reject_rewrite_too_large: bool = True,
+    rewrite_min_prev_lines: int = 6,
+    rewrite_max_ratio: float = 1.5,
+    rewrite_max_abs_lines: int = 0,
+    inject_prompt: str = "",
+    inject_after_attempt: int = 0,
+    inject_on_rejection: bool = False,
+    inject_relax_guardrails: bool = False,
 ) -> None:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -59,7 +69,7 @@ def run_suite(
         cfg=LLMConfig(
             base_url=llm_base_url,
             model=model_id,
-            temperature=0.0,
+            temperature=temperature,
             max_tokens=512,
             timeout_s=120,
         ),
@@ -73,6 +83,8 @@ def run_suite(
         success = 0
         failure_mode: Optional[str] = None
         step_id = 0
+        inject_used = False
+        force_inject_next = False
 
         # Holds the first pytest result when we test starter_code before the loop.
         first_exec_res = None
@@ -102,7 +114,7 @@ def run_suite(
                         "category": getattr(t, "category", None),
                         "topic": getattr(t, "topic", None),
                         "starter_check": getattr(t, "starter_check", None),
-                        "approach_class": classify_approach(code, t.task_id),
+                        "approach_class": classify_approach(code, t.task_id, t.topic),
                     },
                 ).to_json()
                 + "\n"
@@ -278,12 +290,27 @@ def run_suite(
             # Fix step
             step_id += 1
             s_start = now_ms()
+            inject_now = False
+            inject_reason = None
+            if inject_prompt and not inject_used:
+                if force_inject_next:
+                    inject_now = True
+                    inject_reason = "rejection"
+                elif inject_after_attempt > 0 and attempt >= inject_after_attempt:
+                    inject_now = True
+                    inject_reason = f"after_attempt_{attempt}"
+            relax_now = inject_now and inject_relax_guardrails
+
             fix_out = agent.fix(
                 signature=t.signature,
                 prompt=f"[topic={t.topic}] {t.prompt}",
                 prev_code=code,
                 test_output=(exec_res.stdout or "") + "\n" + (exec_res.stderr or ""),
+                injection=inject_prompt if inject_now else None,
             )
+            if inject_now:
+                inject_used = True
+                force_inject_next = False
             s_end = now_ms()
 
             prev_code = code
@@ -302,13 +329,16 @@ def run_suite(
                 "churn_ratio": churn_ratio,
                 "category": getattr(t, "category", None),
                 "topic": getattr(t, "topic", None),
-                "approach_class": classify_approach(new_code, t.task_id),
-                "prev_approach_class": classify_approach(prev_code, t.task_id),
+                "approach_class": classify_approach(new_code, t.task_id, t.topic),
+                "prev_approach_class": classify_approach(prev_code, t.task_id, t.topic),
+                "injection_used": inject_now,
+                "injection_reason": inject_reason,
+                "injection_relax_guardrails": relax_now,
             }
             
             no_change = new_code.strip() == prev_code.strip()
             meta["no_change"] = no_change
-            if no_change:
+            if no_change and reject_no_progress and not relax_now:
                 failure_mode = "no_progress"
                 # log it and break early (otherwise you waste attempts)
                 steps_f.write(
@@ -327,10 +357,20 @@ def run_suite(
                         meta=meta,
                     ).to_json() + "\n"
                 )
+                if inject_on_rejection and inject_prompt and not inject_used:
+                    force_inject_next = True
+                    continue
                 break
 
             # Reject huge rewrites
-            if len(prev_lines) >= 6 and churn_ratio > 1.5:
+            rewrite_too_large = False
+            if reject_rewrite_too_large and len(prev_lines) >= rewrite_min_prev_lines:
+                if churn_ratio > rewrite_max_ratio:
+                    rewrite_too_large = True
+                if rewrite_max_abs_lines and churn_abs_lines > rewrite_max_abs_lines:
+                    rewrite_too_large = True
+
+            if rewrite_too_large and not relax_now:
                 failure_mode = "rewrite_too_large"
                 steps_f.write(
                     StepLog(
@@ -349,6 +389,9 @@ def run_suite(
                     ).to_json()
                     + "\n"
                 )
+                if inject_on_rejection and inject_prompt and not inject_used:
+                    force_inject_next = True
+                    continue
                 break
 
             # Accept fix

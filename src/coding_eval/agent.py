@@ -88,7 +88,14 @@ class LLMAgent:
         )
         return AgentOutput(code=_extract_code(txt), response=txt)
 
-    def fix(self, signature: str, prompt: str, prev_code: str, test_output: str) -> AgentOutput:
+    def fix(
+        self,
+        signature: str,
+        prompt: str,
+        prev_code: str,
+        test_output: str,
+        injection: Optional[str] = None,
+    ) -> AgentOutput:
         system = (
             "You are a careful Python coding assistant.\n"
             "Use Python standard library only. Do NOT import third-party packages.\n"
@@ -118,6 +125,13 @@ class LLMAgent:
                 "- Do NOT add third-party imports.\n"
                 "- Do NOT change tests.\n"
                 "- Return the FULL final code (imports + function). No other text.\n"
+            )
+
+        if injection:
+            user = (
+                f"{user}\n\n"
+                "Additional guidance (decision-time injection):\n"
+                f"{injection.strip()}\n"
             )
 
 

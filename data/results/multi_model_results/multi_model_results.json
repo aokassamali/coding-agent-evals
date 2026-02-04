@@ -1,0 +1,629 @@
+{
+  "models": {
+    "codegemma_7b_it_Q6_K": {
+      "n_trajectories": 200,
+      "run_dir": "C:\\Users\\aokas\\coding-agent-evals\\runs\\zz_codegemma_7b_it_Q6_K",
+      "data_fingerprint": "58f1f8c0e941",
+      "model_ids": [
+        "codegemma_7b_it_Q6_K"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 20,
+        "approach_switch_rate": 0.16129032258064516,
+        "early_deviations": 20,
+        "early_deviation_rate": 0.1724137931034483,
+        "fix_by_attempt": {
+          "1": 40,
+          "2": 92,
+          "3": 10
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 144,
+          "3": 28,
+          "4": 1
+        },
+        "approach_coverage": {
+          "detected": 198,
+          "total": 198,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 116,
+        "deviations": 20,
+        "rate": 0.1724137931034483,
+        "by_topic": {
+          "backpressure": {
+            "total": 2,
+            "deviations": 0
+          },
+          "bst": {
+            "total": 10,
+            "deviations": 0
+          },
+          "caching": {
+            "total": 10,
+            "deviations": 0
+          },
+          "circuit_breaker": {
+            "total": 1,
+            "deviations": 0
+          },
+          "connection_pool": {
+            "total": 10,
+            "deviations": 10
+          },
+          "graph": {
+            "total": 10,
+            "deviations": 0
+          },
+          "read_write_lock": {
+            "total": 10,
+            "deviations": 0
+          },
+          "request_coalescing": {
+            "total": 10,
+            "deviations": 0
+          },
+          "retry": {
+            "total": 3,
+            "deviations": 0
+          },
+          "ring_buffer": {
+            "total": 10,
+            "deviations": 10
+          },
+          "string_match": {
+            "total": 10,
+            "deviations": 0
+          },
+          "thread_pool": {
+            "total": 10,
+            "deviations": 0
+          },
+          "timer": {
+            "total": 10,
+            "deviations": 0
+          },
+          "trie": {
+            "total": 10,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.8,
+          "cumulative_fix_prob": 0.19999999999999996,
+          "hazard_rate": 0.2,
+          "at_risk": 200,
+          "events": 40
+        },
+        "2": {
+          "survival_prob": 0.2888888888888889,
+          "cumulative_fix_prob": 0.711111111111111,
+          "hazard_rate": 0.6388888888888888,
+          "at_risk": 144,
+          "events": 92
+        },
+        "3": {
+          "survival_prob": 0.18571428571428572,
+          "cumulative_fix_prob": 0.8142857142857143,
+          "hazard_rate": 0.35714285714285715,
+          "at_risk": 28,
+          "events": 10
+        },
+        "4": {
+          "survival_prob": 0.18571428571428572,
+          "cumulative_fix_prob": 0.8142857142857143,
+          "hazard_rate": 0.0,
+          "at_risk": 1,
+          "events": 0
+        }
+      }
+    },
+    "qwen2_5_coder_7b_instruct_q6_k": {
+      "n_trajectories": 200,
+      "run_dir": "C:\\Users\\aokas\\coding-agent-evals\\runs\\zz_qwen2_5_coder_7b_instruct_q6_k",
+      "data_fingerprint": "963132dc7106",
+      "model_ids": [
+        "qwen2_5_coder_7b_instruct_q6_k"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 20,
+        "approach_switch_rate": 0.16129032258064516,
+        "early_deviations": 20,
+        "early_deviation_rate": 0.1724137931034483,
+        "fix_by_attempt": {
+          "1": 40,
+          "2": 92,
+          "3": 10
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 144,
+          "3": 28,
+          "4": 1
+        },
+        "approach_coverage": {
+          "detected": 198,
+          "total": 198,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 116,
+        "deviations": 20,
+        "rate": 0.1724137931034483,
+        "by_topic": {
+          "backpressure": {
+            "total": 2,
+            "deviations": 0
+          },
+          "bst": {
+            "total": 10,
+            "deviations": 0
+          },
+          "caching": {
+            "total": 10,
+            "deviations": 0
+          },
+          "circuit_breaker": {
+            "total": 2,
+            "deviations": 0
+          },
+          "connection_pool": {
+            "total": 10,
+            "deviations": 10
+          },
+          "graph": {
+            "total": 10,
+            "deviations": 0
+          },
+          "read_write_lock": {
+            "total": 10,
+            "deviations": 0
+          },
+          "request_coalescing": {
+            "total": 10,
+            "deviations": 0
+          },
+          "retry": {
+            "total": 2,
+            "deviations": 0
+          },
+          "ring_buffer": {
+            "total": 10,
+            "deviations": 10
+          },
+          "string_match": {
+            "total": 10,
+            "deviations": 0
+          },
+          "thread_pool": {
+            "total": 10,
+            "deviations": 0
+          },
+          "timer": {
+            "total": 10,
+            "deviations": 0
+          },
+          "trie": {
+            "total": 10,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.8,
+          "cumulative_fix_prob": 0.19999999999999996,
+          "hazard_rate": 0.2,
+          "at_risk": 200,
+          "events": 40
+        },
+        "2": {
+          "survival_prob": 0.2888888888888889,
+          "cumulative_fix_prob": 0.711111111111111,
+          "hazard_rate": 0.6388888888888888,
+          "at_risk": 144,
+          "events": 92
+        },
+        "3": {
+          "survival_prob": 0.18571428571428572,
+          "cumulative_fix_prob": 0.8142857142857143,
+          "hazard_rate": 0.35714285714285715,
+          "at_risk": 28,
+          "events": 10
+        },
+        "4": {
+          "survival_prob": 0.18571428571428572,
+          "cumulative_fix_prob": 0.8142857142857143,
+          "hazard_rate": 0.0,
+          "at_risk": 1,
+          "events": 0
+        }
+      }
+    },
+    "deepseek_coder_6_7b_instruct_Q6_K": {
+      "n_trajectories": 200,
+      "run_dir": "C:\\Users\\aokas\\coding-agent-evals\\runs\\zz_deepseek_coder_6_7b_instruct_Q6_K",
+      "data_fingerprint": "2864e5929e6e",
+      "model_ids": [
+        "deepseek_coder_6_7b_instruct_Q6_K"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 20,
+        "approach_switch_rate": 0.16393442622950818,
+        "early_deviations": 20,
+        "early_deviation_rate": 0.17543859649122806,
+        "fix_by_attempt": {
+          "1": 40,
+          "2": 90,
+          "3": 10
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 142,
+          "3": 28,
+          "4": 1
+        },
+        "approach_coverage": {
+          "detected": 198,
+          "total": 198,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 114,
+        "deviations": 20,
+        "rate": 0.17543859649122806,
+        "by_topic": {
+          "backpressure": {
+            "total": 2,
+            "deviations": 0
+          },
+          "bst": {
+            "total": 10,
+            "deviations": 0
+          },
+          "caching": {
+            "total": 10,
+            "deviations": 0
+          },
+          "connection_pool": {
+            "total": 10,
+            "deviations": 10
+          },
+          "graph": {
+            "total": 10,
+            "deviations": 0
+          },
+          "read_write_lock": {
+            "total": 10,
+            "deviations": 0
+          },
+          "request_coalescing": {
+            "total": 10,
+            "deviations": 0
+          },
+          "retry": {
+            "total": 2,
+            "deviations": 0
+          },
+          "ring_buffer": {
+            "total": 10,
+            "deviations": 10
+          },
+          "string_match": {
+            "total": 10,
+            "deviations": 0
+          },
+          "thread_pool": {
+            "total": 10,
+            "deviations": 0
+          },
+          "timer": {
+            "total": 10,
+            "deviations": 0
+          },
+          "trie": {
+            "total": 10,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.8,
+          "cumulative_fix_prob": 0.19999999999999996,
+          "hazard_rate": 0.2,
+          "at_risk": 200,
+          "events": 40
+        },
+        "2": {
+          "survival_prob": 0.29295774647887324,
+          "cumulative_fix_prob": 0.7070422535211267,
+          "hazard_rate": 0.6338028169014085,
+          "at_risk": 142,
+          "events": 90
+        },
+        "3": {
+          "survival_prob": 0.18832997987927563,
+          "cumulative_fix_prob": 0.8116700201207243,
+          "hazard_rate": 0.35714285714285715,
+          "at_risk": 28,
+          "events": 10
+        },
+        "4": {
+          "survival_prob": 0.18832997987927563,
+          "cumulative_fix_prob": 0.8116700201207243,
+          "hazard_rate": 0.0,
+          "at_risk": 1,
+          "events": 0
+        }
+      }
+    },
+    "qwen2_5_coder_7b_instruct_q4_k_m": {
+      "n_trajectories": 200,
+      "run_dir": "C:\\Users\\aokas\\coding-agent-evals\\runs\\zz_qwen2_5_coder_7b_instruct_q4_k_m",
+      "data_fingerprint": "227553215aa8",
+      "model_ids": [
+        "qwen2_5_coder_7b_instruct_q4_k_m"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 20,
+        "approach_switch_rate": 0.16129032258064516,
+        "early_deviations": 20,
+        "early_deviation_rate": 0.1724137931034483,
+        "fix_by_attempt": {
+          "1": 40,
+          "2": 93,
+          "3": 9
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 144,
+          "3": 27,
+          "4": 1
+        },
+        "approach_coverage": {
+          "detected": 198,
+          "total": 198,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 116,
+        "deviations": 20,
+        "rate": 0.1724137931034483,
+        "by_topic": {
+          "backpressure": {
+            "total": 2,
+            "deviations": 0
+          },
+          "bst": {
+            "total": 10,
+            "deviations": 0
+          },
+          "caching": {
+            "total": 10,
+            "deviations": 0
+          },
+          "circuit_breaker": {
+            "total": 1,
+            "deviations": 0
+          },
+          "connection_pool": {
+            "total": 10,
+            "deviations": 10
+          },
+          "graph": {
+            "total": 10,
+            "deviations": 0
+          },
+          "read_write_lock": {
+            "total": 10,
+            "deviations": 0
+          },
+          "request_coalescing": {
+            "total": 10,
+            "deviations": 0
+          },
+          "retry": {
+            "total": 3,
+            "deviations": 0
+          },
+          "ring_buffer": {
+            "total": 10,
+            "deviations": 10
+          },
+          "string_match": {
+            "total": 10,
+            "deviations": 0
+          },
+          "thread_pool": {
+            "total": 10,
+            "deviations": 0
+          },
+          "timer": {
+            "total": 10,
+            "deviations": 0
+          },
+          "trie": {
+            "total": 10,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.8,
+          "cumulative_fix_prob": 0.19999999999999996,
+          "hazard_rate": 0.2,
+          "at_risk": 200,
+          "events": 40
+        },
+        "2": {
+          "survival_prob": 0.2833333333333333,
+          "cumulative_fix_prob": 0.7166666666666667,
+          "hazard_rate": 0.6458333333333334,
+          "at_risk": 144,
+          "events": 93
+        },
+        "3": {
+          "survival_prob": 0.1888888888888889,
+          "cumulative_fix_prob": 0.8111111111111111,
+          "hazard_rate": 0.3333333333333333,
+          "at_risk": 27,
+          "events": 9
+        },
+        "4": {
+          "survival_prob": 0.1888888888888889,
+          "cumulative_fix_prob": 0.8111111111111111,
+          "hazard_rate": 0.0,
+          "at_risk": 1,
+          "events": 0
+        }
+      }
+    },
+    "qwen2_5_coder_3b_instruct_q6_k": {
+      "n_trajectories": 200,
+      "run_dir": "C:\\Users\\aokas\\coding-agent-evals\\runs\\zz_qwen2_5_coder_3b_instruct_q6_k",
+      "data_fingerprint": "27a64e1f4682",
+      "model_ids": [
+        "qwen2_5_coder_3b_instruct_q6_k"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 20,
+        "approach_switch_rate": 0.16129032258064516,
+        "early_deviations": 20,
+        "early_deviation_rate": 0.1724137931034483,
+        "fix_by_attempt": {
+          "1": 40,
+          "2": 91,
+          "3": 10
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 144,
+          "3": 28,
+          "4": 1
+        },
+        "approach_coverage": {
+          "detected": 198,
+          "total": 198,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 116,
+        "deviations": 20,
+        "rate": 0.1724137931034483,
+        "by_topic": {
+          "backpressure": {
+            "total": 2,
+            "deviations": 0
+          },
+          "bst": {
+            "total": 10,
+            "deviations": 0
+          },
+          "caching": {
+            "total": 10,
+            "deviations": 0
+          },
+          "circuit_breaker": {
+            "total": 2,
+            "deviations": 0
+          },
+          "connection_pool": {
+            "total": 10,
+            "deviations": 10
+          },
+          "graph": {
+            "total": 10,
+            "deviations": 0
+          },
+          "read_write_lock": {
+            "total": 10,
+            "deviations": 0
+          },
+          "request_coalescing": {
+            "total": 10,
+            "deviations": 0
+          },
+          "retry": {
+            "total": 2,
+            "deviations": 0
+          },
+          "ring_buffer": {
+            "total": 10,
+            "deviations": 10
+          },
+          "string_match": {
+            "total": 10,
+            "deviations": 0
+          },
+          "thread_pool": {
+            "total": 10,
+            "deviations": 0
+          },
+          "timer": {
+            "total": 10,
+            "deviations": 0
+          },
+          "trie": {
+            "total": 10,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.8,
+          "cumulative_fix_prob": 0.19999999999999996,
+          "hazard_rate": 0.2,
+          "at_risk": 200,
+          "events": 40
+        },
+        "2": {
+          "survival_prob": 0.29444444444444445,
+          "cumulative_fix_prob": 0.7055555555555555,
+          "hazard_rate": 0.6319444444444444,
+          "at_risk": 144,
+          "events": 91
+        },
+        "3": {
+          "survival_prob": 0.18928571428571428,
+          "cumulative_fix_prob": 0.8107142857142857,
+          "hazard_rate": 0.35714285714285715,
+          "at_risk": 28,
+          "events": 10
+        },
+        "4": {
+          "survival_prob": 0.18928571428571428,
+          "cumulative_fix_prob": 0.8107142857142857,
+          "hazard_rate": 0.0,
+          "at_risk": 1,
+          "events": 0
+        }
+      }
+    }
+  },
+  "summary": {
+    "n_models": 5,
+    "total_trajectories": 1000
+  }
+}

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+<rect width="100%" height="100%" fill="white"/>
+<text x="70" y="30" font-size="16" font-family="Arial">Kaplan-Meier Survival Curves (v11 oscillation, B_debug)</text>
+<line x1="70" y1="460" x2="70" y2="50" stroke="#000"/>
+<line x1="70" y1="460" x2="660" y2="460" stroke="#000"/>
+<line x1="65" y1="460.0" x2="70" y2="460.0" stroke="#000"/>
+<text x="60" y="464.0" font-size="11" text-anchor="end" font-family="Arial">0.00</text>
+<line x1="65" y1="357.5" x2="70" y2="357.5" stroke="#000"/>
+<text x="60" y="361.5" font-size="11" text-anchor="end" font-family="Arial">0.25</text>
+<line x1="65" y1="255.0" x2="70" y2="255.0" stroke="#000"/>
+<text x="60" y="259.0" font-size="11" text-anchor="end" font-family="Arial">0.50</text>
+<line x1="65" y1="152.5" x2="70" y2="152.5" stroke="#000"/>
+<text x="60" y="156.5" font-size="11" text-anchor="end" font-family="Arial">0.75</text>
+<line x1="65" y1="50.0" x2="70" y2="50.0" stroke="#000"/>
+<text x="60" y="54.0" font-size="11" text-anchor="end" font-family="Arial">1.00</text>
+<line x1="70.0" y1="460" x2="70.0" y2="465" stroke="#000"/>
+<text x="70.0" y="480" font-size="11" text-anchor="middle" font-family="Arial">1</text>
+<line x1="266.66666666666663" y1="460" x2="266.66666666666663" y2="465" stroke="#000"/>
+<text x="266.66666666666663" y="480" font-size="11" text-anchor="middle" font-family="Arial">2</text>
+<line x1="463.3333333333333" y1="460" x2="463.3333333333333" y2="465" stroke="#000"/>
+<text x="463.3333333333333" y="480" font-size="11" text-anchor="middle" font-family="Arial">3</text>
+<line x1="660.0" y1="460" x2="660.0" y2="465" stroke="#000"/>
+<text x="660.0" y="480" font-size="11" text-anchor="middle" font-family="Arial">4</text>
+<text x="365.0" y="505" font-size="12" text-anchor="middle" font-family="Arial">Attempt</text>
+<text x="15" y="255.0" font-size="12" text-anchor="middle" font-family="Arial" transform="rotate(-90, 15, 255.0)">Survival Probability</text>
+<polyline points="70.0,154.6 266.7,319.0 463.3,445.3 660.0,445.3" fill="none" stroke="#1f77b4" stroke-width="2"/>
+<circle cx="70.0" cy="154.6" r="3" fill="#1f77b4"/>
+<circle cx="266.7" cy="319.0" r="3" fill="#1f77b4"/>
+<circle cx="463.3" cy="445.3" r="3" fill="#1f77b4"/>
+<circle cx="660.0" cy="445.3" r="3" fill="#1f77b4"/>
+<polyline points="70.0,154.6 266.7,317.6 463.3,443.2 660.0,443.2" fill="none" stroke="#ff7f0e" stroke-width="2"/>
+<circle cx="70.0" cy="154.6" r="3" fill="#ff7f0e"/>
+<circle cx="266.7" cy="317.6" r="3" fill="#ff7f0e"/>
+<circle cx="463.3" cy="443.2" r="3" fill="#ff7f0e"/>
+<circle cx="660.0" cy="443.2" r="3" fill="#ff7f0e"/>
+<polyline points="70.0,154.6 266.7,321.2 463.3,443.3 660.0,443.3" fill="none" stroke="#2ca02c" stroke-width="2"/>
+<circle cx="70.0" cy="154.6" r="3" fill="#2ca02c"/>
+<circle cx="266.7" cy="321.2" r="3" fill="#2ca02c"/>
+<circle cx="463.3" cy="443.3" r="3" fill="#2ca02c"/>
+<circle cx="660.0" cy="443.3" r="3" fill="#2ca02c"/>
+<polyline points="70.0,154.6 266.7,321.2 463.3,438.2 660.0,438.2" fill="none" stroke="#d62728" stroke-width="2"/>
+<circle cx="70.0" cy="154.6" r="3" fill="#d62728"/>
+<circle cx="266.7" cy="321.2" r="3" fill="#d62728"/>
+<circle cx="463.3" cy="438.2" r="3" fill="#d62728"/>
+<circle cx="660.0" cy="438.2" r="3" fill="#d62728"/>
+<polyline points="70.0,154.6 266.7,322.2 463.3,440.7 660.0,440.7" fill="none" stroke="#9467bd" stroke-width="2"/>
+<circle cx="70.0" cy="154.6" r="3" fill="#9467bd"/>
+<circle cx="266.7" cy="322.2" r="3" fill="#9467bd"/>
+<circle cx="463.3" cy="440.7" r="3" fill="#9467bd"/>
+<circle cx="660.0" cy="440.7" r="3" fill="#9467bd"/>
+<text x="680" y="40" font-size="12" font-family="Arial">Models</text>
+<rect x="680" y="50" width="12" height="12" fill="#1f77b4"/>
+<text x="698" y="60" font-size="11" font-family="Arial">DeepSeek 6.7B Q6_K</text>
+<rect x="680" y="70" width="12" height="12" fill="#ff7f0e"/>
+<text x="698" y="80" font-size="11" font-family="Arial">CodeGemma 7B Q6_K</text>
+<rect x="680" y="90" width="12" height="12" fill="#2ca02c"/>
+<text x="698" y="100" font-size="11" font-family="Arial">Qwen2.5 7B Q4_K_M</text>
+<rect x="680" y="110" width="12" height="12" fill="#d62728"/>
+<text x="698" y="120" font-size="11" font-family="Arial">Qwen2.5 3B Q6_K</text>
+<rect x="680" y="130" width="12" height="12" fill="#9467bd"/>
+<text x="698" y="140" font-size="11" font-family="Arial">Qwen2.5 7B Q6_K</text>
+</svg>

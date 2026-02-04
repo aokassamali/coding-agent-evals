@@ -1,0 +1,116 @@
+{
+  "results": {
+    "oscillation_q6_codegemma_7b_it": {
+      "tier": "oscillation",
+      "quantization": "q6",
+      "model": "codegemma_7b_it",
+      "n_runs": 28,
+      "success_rate": 0.6428571428571429,
+      "thrash_rate": 0.0,
+      "stuck_rate": 0.25,
+      "avg_oscillations": 0,
+      "avg_regressions": 0,
+      "avg_decisions": 1.5,
+      "med_latency_ms": 19493.0,
+      "avg_approach_osc": 0,
+      "approach_detection_coverage": 0.8333333333333334,
+      "total_approach_switches": 0,
+      "approach_switch_rate": 0.0
+    },
+    "oscillation_q6_deepseek_coder_6_7b_instruct": {
+      "tier": "oscillation",
+      "quantization": "q6",
+      "model": "deepseek_coder_6_7b_instruct",
+      "n_runs": 29,
+      "success_rate": 0.6551724137931034,
+      "thrash_rate": 0.0,
+      "stuck_rate": 0.20689655172413793,
+      "avg_oscillations": 0,
+      "avg_regressions": 0,
+      "avg_decisions": 1.4137931034482758,
+      "med_latency_ms": 15853,
+      "avg_approach_osc": 0,
+      "approach_detection_coverage": 0.8780487804878049,
+      "total_approach_switches": 0,
+      "approach_switch_rate": 0.0
+    },
+    "oscillation_q6_qwen2_5_coder_3b_instruct": {
+      "tier": "oscillation",
+      "quantization": "q6",
+      "model": "qwen2_5_coder_3b_instruct",
+      "n_runs": 28,
+      "success_rate": 0.6428571428571429,
+      "thrash_rate": 0.0,
+      "stuck_rate": 0.21428571428571427,
+      "avg_oscillations": 0,
+      "avg_regressions": 0,
+      "avg_decisions": 1.4285714285714286,
+      "med_latency_ms": 15093.0,
+      "avg_approach_osc": 0,
+      "approach_detection_coverage": 0.875,
+      "total_approach_switches": 0,
+      "approach_switch_rate": 0.0
+    },
+    "oscillation_q6_qwen2_5_coder_7b_instruct": {
+      "tier": "oscillation",
+      "quantization": "q6",
+      "model": "qwen2_5_coder_7b_instruct",
+      "n_runs": 29,
+      "success_rate": 0.6551724137931034,
+      "thrash_rate": 0.0,
+      "stuck_rate": 0.2413793103448276,
+      "avg_oscillations": 0,
+      "avg_regressions": 0,
+      "avg_decisions": 1.4827586206896552,
+      "med_latency_ms": 16725,
+      "avg_approach_osc": 0,
+      "approach_detection_coverage": 0.8372093023255814,
+      "total_approach_switches": 0,
+      "approach_switch_rate": 0.0
+    },
+    "oscillation_q4_qwen2_5_coder_7b_instruct": {
+      "tier": "oscillation",
+      "quantization": "q4",
+      "model": "qwen2_5_coder_7b_instruct",
+      "n_runs": 29,
+      "success_rate": 0.6551724137931034,
+      "thrash_rate": 0.0,
+      "stuck_rate": 0.20689655172413793,
+      "avg_oscillations": 0,
+      "avg_regressions": 0.034482758620689655,
+      "avg_decisions": 1.5172413793103448,
+      "med_latency_ms": 20620,
+      "avg_approach_osc": 0,
+      "approach_detection_coverage": 0.8409090909090909,
+      "total_approach_switches": 0,
+      "approach_switch_rate": 0.0
+    }
+  },
+  "coverage": {
+    "oscillation_q6_codegemma_7b_it": {
+      "decisions_with_approach": 35,
+      "decisions_total": 42,
+      "coverage_pct": 0.8333333333333334
+    },
+    "oscillation_q6_deepseek_coder_6_7b_instruct": {
+      "decisions_with_approach": 36,
+      "decisions_total": 41,
+      "coverage_pct": 0.8780487804878049
+    },
+    "oscillation_q6_qwen2_5_coder_3b_instruct": {
+      "decisions_with_approach": 35,
+      "decisions_total": 40,
+      "coverage_pct": 0.875
+    },
+    "oscillation_q6_qwen2_5_coder_7b_instruct": {
+      "decisions_with_approach": 36,
+      "decisions_total": 43,
+      "coverage_pct": 0.8372093023255814
+    },
+    "oscillation_q4_qwen2_5_coder_7b_instruct": {
+      "decisions_with_approach": 37,
+      "decisions_total": 44,
+      "coverage_pct": 0.8409090909090909
+    }
+  }
+}

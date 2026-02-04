@@ -32,6 +32,31 @@ def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_tasks_metadata(tasks_path: Optional[str]) -> Dict[str, Dict[str, Any]]:
+    if not tasks_path:
+        return {}
+    path = Path(tasks_path)
+    if not path.exists():
+        print(f"[warn] tasks_path not found: {path}")
+        return {}
+    tasks: Dict[str, Dict[str, Any]] = {}
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            d = json.loads(line)
+            task_id = d.get("task_id")
+            if not task_id:
+                continue
+            tasks[str(task_id)] = {
+                "tier": d.get("tier"),
+                "topic": d.get("topic"),
+                "category": d.get("category"),
+            }
+    return tasks
+
+
 def _min_int(xs: List[Optional[int]]) -> Optional[int]:
     ys = [x for x in xs if isinstance(x, int)]
     return min(ys) if ys else None
@@ -80,6 +105,27 @@ def _percentile(xs: List[float], p: float) -> Optional[float]:
     d1 = xs_sorted[c] * (k - f)
     return d0 + d1
 
+def wilson_ci(successes: int, n: int, z: float = 1.96) -> Tuple[float, float]:
+    """Wilson score confidence interval for a proportion."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = successes / n
+    denom = 1 + z**2 / n
+    center = (p + z**2 / (2*n)) / denom
+    spread = ((p*(1-p) + z**2/(4*n)) / n) ** 0.5 * z / denom
+    return (max(0.0, center - spread), min(1.0, center + spread))
+
+
+def _rate_with_ci(preds: Iterable[bool]) -> Tuple[Optional[float], Optional[Tuple[float, float]]]:
+    """Returns (rate, (ci_low, ci_high)) or (None, None) if empty."""
+    preds = list(preds)
+    if not preds:
+        return None, None
+    successes = sum(1 for x in preds if x)
+    n = len(preds)
+    rate = successes / n
+    ci = wilson_ci(successes, n)
+    return rate, ci
 
 def _parse_failed_count(pytest_stdout: str, pytest_stderr: str) -> Optional[int]:
     """
@@ -99,6 +145,77 @@ def _parse_failed_count(pytest_stdout: str, pytest_stderr: str) -> Optional[int]
         return 0
     return None
 
+def _code_similarity(code1: str, code2: str) -> float:
+    """Jaccard similarity of code tokens (words/identifiers)."""
+    if not code1 or not code2:
+        return 0.0
+    tokens1 = set(re.findall(r'\w+', code1))
+    tokens2 = set(re.findall(r'\w+', code2))
+    if not tokens1 and not tokens2:
+        return 1.0
+    if not tokens1 or not tokens2:
+        return 0.0
+    return len(tokens1 & tokens2) / len(tokens1 | tokens2)
+
+
+def _compute_code_churn(step_rows: List[Dict[str, Any]]) -> List[float]:
+    """
+    Returns list of similarity scores between consecutive code versions.
+    High similarity (>0.9) = minor tweaks; Low similarity (<0.5) = major rewrite.
+    """
+    code_versions = []
+    track_types = {
+        "code_starter",
+        "code_propose",
+        "code_fix",
+        "code_fix_rejected",
+        "code_edit",
+    }
+    for s in sorted(step_rows, key=lambda x: int(x.get("step_id", 0))):
+        st = s.get("step_type")
+        if st in track_types:
+            code_versions.append(s.get("code", ""))
+    
+    churns = []
+    for i in range(1, len(code_versions)):
+        churns.append(_code_similarity(code_versions[i-1], code_versions[i]))
+    return churns
+
+def _error_stability(step_rows: List[Dict[str, Any]]) -> Tuple[bool, int]:
+    """
+    Check if the same error type repeats across test attempts.
+    Returns (is_stable, count_of_repeated_errors).
+    
+    Stable = same error message pattern in 2+ consecutive failed tests.
+    """
+    test_outputs = []
+    for s in sorted(step_rows, key=lambda x: int(x.get("step_id", 0))):
+        if s.get("step_type") == "test" and s.get("exit_code") != 0:
+            # Extract the key error line (first assertion or error)
+            stdout = s.get("stdout", "")
+            stderr = s.get("stderr", "")
+            combined = f"{stdout}\n{stderr}"
+            # Look for AssertionError line or first FAILED line
+            error_sig = ""
+            for line in combined.split("\n"):
+                if "AssertionError" in line or "Error" in line:
+                    error_sig = line.strip()[:80]
+                    break
+                if "FAILED" in line:
+                    error_sig = line.strip()[:80]
+                    break
+            test_outputs.append(error_sig)
+    
+    if len(test_outputs) < 2:
+        return False, 0
+    
+    # Count consecutive repeats
+    repeats = 0
+    for i in range(1, len(test_outputs)):
+        if test_outputs[i] == test_outputs[i-1] and test_outputs[i]:
+            repeats += 1
+    
+    return repeats > 0, repeats
 
 def _fail_curve(step_rows: List[Dict[str, Any]]) -> List[Optional[int]]:
     """
@@ -116,7 +233,26 @@ def _fail_curve(step_rows: List[Dict[str, Any]]) -> List[Optional[int]]:
 
 _TIER_RE = re.compile(r"^(tier\d+)_", re.IGNORECASE)
 
-def _task_tier(task_id: str) -> str:
+def _tier_from_meta(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return f"tier{value}"
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v.startswith("tier"):
+            return v
+        if v.isdigit():
+            return f"tier{v}"
+        return v
+    return None
+
+
+def _task_tier(task_id: str, tasks_meta: Optional[Dict[str, Dict[str, Any]]] = None) -> str:
+    if tasks_meta and task_id in tasks_meta:
+        tier = _tier_from_meta(tasks_meta.get(task_id, {}).get("tier"))
+        if tier:
+            return tier
     m = _TIER_RE.match(task_id or "")
     return m.group(1).lower() if m else "tier?"
 
@@ -153,7 +289,7 @@ class RunDerived:
 
     failed_tests_attempt1: Optional[int]       # failed tests on first test step (parsed)
     n_test_steps: int                          # number of test steps recorded
-    rewrite_rejected: bool                     # any code_fix_rejected or failure_mode rewrite_too_large
+    rewrite_rejected: bool                     # rewrite_too_large guardrail triggered
 
     # Behavior discriminator: model repeats unchanged code while still failing
     thrash: bool
@@ -169,12 +305,20 @@ class RunDerived:
     improve_frac: Optional[float]               # (failed1 - best)/failed1 (if failed1>0)
     thrash_failcurve: bool                      # oscillation on failed-count curve
     tier: str
-
+    # Code churn metrics (NEW)
+    code_churns: List[float]  # similarity between consecutive versions
+    avg_code_churn: Optional[float]  # mean similarity (high = minor edits, low = rewrites)
+    min_code_churn: Optional[float]  # lowest similarity (biggest single change)
+    
+    # Error stability (NEW)  
+    error_stable: bool  # same error repeated across attempts
+    error_repeat_count: int  # how many consecutive same-error pairs
 
 
 def _derive_from_steps(
     run_row: Dict[str, Any],
     step_rows: List[Dict[str, Any]],
+    tasks_meta: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> RunDerived:
     run_id = str(run_row.get("run_id", ""))
     model_id = str(run_row.get("model_id", ""))
@@ -182,14 +326,19 @@ def _derive_from_steps(
     task_id = str(run_row.get("task_id", ""))
     category = run_row.get("category")
     topic = run_row.get("topic")
-    tier = _task_tier(task_id)
+    if tasks_meta and task_id in tasks_meta:
+        meta = tasks_meta.get(task_id, {})
+        if category is None:
+            category = meta.get("category")
+        if topic is None:
+            topic = meta.get("topic")
+    tier = _task_tier(task_id, tasks_meta)
     # sort steps by step_id
     step_rows = sorted(step_rows, key=lambda r: int(r.get("step_id", 0)))
 
     has_starter = any(s.get("step_type") == "code_starter" for s in step_rows)
 
     test_steps = [s for s in step_rows if s.get("step_type") == "test"]
-    fix_steps = [s for s in step_rows if s.get("step_type") == "code_fix"]
 
     # ---- fail curve + progress metrics ----
     fc = _fail_curve(step_rows)
@@ -234,28 +383,27 @@ def _derive_from_steps(
     else:
         success = 1 if first_pass_test_attempt is not None else 0
 
-    # --- rewrite rejected? ---
-    rewrite_rejected = False
-    if (run_row.get("failure_mode") or "") == "rewrite_too_large":
-        rewrite_rejected = True
-    for s in step_rows:
-        if s.get("step_type") == "code_fix_rejected":
-            rewrite_rejected = True
-            break
+    # --- rewrite rejected? (only the rewrite_too_large guardrail) ---
+    rewrite_rejected = (run_row.get("failure_mode") or "") == "rewrite_too_large"
+    if not rewrite_rejected:
+        for s in step_rows:
+            if s.get("step_type") != "code_fix_rejected":
+                continue
+            meta = s.get("meta") or {}
+            prev_n = meta.get("prev_n_lines")
+            churn_ratio = meta.get("churn_ratio")
+            if isinstance(prev_n, int) and prev_n >= 6 and isinstance(churn_ratio, (int, float)) and churn_ratio > 1.5:
+                rewrite_rejected = True
+                break
 
-    # --- thrash (meta.no_change-based) ---
-    thrash = False
-    by_step_id = {int(s.get("step_id", 0)): s for s in step_rows if "step_id" in s}
-    for s in fix_steps:
-        meta = s.get("meta") or {}
-        no_change = bool(meta.get("no_change", False))
-        if not no_change:
-            continue
-        sid = int(s.get("step_id", 0))
-        next_test = by_step_id.get(sid + 1)
-        if next_test and next_test.get("step_type") == "test":
-            exit_code = next_test.get("exit_code")
-            if exit_code != 0:
+    # --- thrash (no-change rejection) ---
+    thrash = (run_row.get("failure_mode") or "") == "no_progress"
+    if not thrash:
+        for s in step_rows:
+            if s.get("step_type") != "code_fix_rejected":
+                continue
+            meta = s.get("meta") or {}
+            if meta.get("no_change") is True:
                 thrash = True
                 break
 
@@ -268,6 +416,14 @@ def _derive_from_steps(
             ended = s.get("ended_ms")
             if isinstance(started, int) and isinstance(ended, int) and ended >= started:
                 llm_latencies_ms.append(ended - started)
+
+    # --- Code churn ---
+    code_churns = _compute_code_churn(step_rows)
+    avg_code_churn = statistics.mean(code_churns) if code_churns else None
+    min_code_churn = min(code_churns) if code_churns else None
+    
+    # --- Error stability ---
+    error_stable, error_repeat_count = _error_stability(step_rows)
 
     return RunDerived(
         run_id=run_id,
@@ -292,6 +448,11 @@ def _derive_from_steps(
         improve_frac=improve_frac,
         thrash_failcurve=thrash_failcurve,
         tier=tier,
+        code_churns=code_churns,
+        avg_code_churn=avg_code_churn,
+        min_code_churn=min_code_churn,
+        error_stable=error_stable,
+        error_repeat_count=error_repeat_count,
     )
 
 
@@ -303,6 +464,7 @@ def _derive_from_steps(
 class Args:
     run_dirs: List[str]
     k_values: Tuple[int, ...] = (1, 2, 3, 4)
+    tasks_path: Optional[str] = None
 
 
 def _rate(preds: Iterable[bool]) -> Optional[float]:
@@ -393,12 +555,42 @@ def _median_improve_frac_failed_only(rs: List[RunDerived]) -> Optional[float]:
         return None
     return float(statistics.median(xs))
 
+def _median_code_churn(rs: List[RunDerived]) -> Optional[float]:
+    xs = [r.avg_code_churn for r in rs if r.avg_code_churn is not None]
+    if not xs:
+        return None
+    return float(statistics.median(xs))
+
+
+def _error_stable_rate(rs: List[RunDerived]) -> Optional[float]:
+    if not rs:
+        return None
+    return sum(1 for r in rs if r.error_stable) / len(rs)
+
+
+def _pass_at_k_with_ci(rs: List[RunDerived], k: int, *, which: str = "fix") -> Tuple[Optional[float], Optional[Tuple[float, float]]]:
+    """Returns (rate, (ci_low, ci_high))."""
+    if not rs:
+        return None, None
+    successes = 0
+    for r in rs:
+        a = r.first_pass_fix_attempt if which == "fix" else r.first_pass_test_attempt
+        if a is not None and a <= k:
+            successes += 1
+    n = len(rs)
+    rate = successes / n
+    ci = wilson_ci(successes, n)
+    return rate, ci
 
 # -----------------------------
 # Summarize
 # -----------------------------
 
-def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[str, Any]]:
+def _summarize_run_dir(
+    run_dir: Path,
+    k_values: Tuple[int, ...],
+    tasks_meta: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> List[Dict[str, Any]]:
     runs_path = run_dir / "fact_run.jsonl"
     steps_path = run_dir / "fact_step.jsonl"
 
@@ -416,7 +608,7 @@ def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[st
         rid = r.get("run_id")
         if not rid:
             continue
-        d = _derive_from_steps(r, steps_by_run.get(str(rid), []))
+        d = _derive_from_steps(r, steps_by_run.get(str(rid), []), tasks_meta)
         derived.append(d)
 
     by_mv: Dict[Tuple[str, str], List[RunDerived]] = defaultdict(list)
@@ -441,22 +633,27 @@ def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[st
         # --- Tier stats (Option A) ---
         tiers: Dict[str, List[RunDerived]] = defaultdict(list)
         for r in bugfix:
-            tiers[_task_tier(r.task_id)].append(r)
+            tiers[r.tier].append(r)
 
         tier_rows: List[Dict[str, Any]] = []
         for tier_name, trs in sorted(tiers.items()):
-            tr = {
-                "tier": tier_name,
-                "n": len(trs),
-                # keep it minimal: p@1 and p@4 (and medAtt) are usually enough
-                "p1": _pass_at_k(trs, 1, which="fix"),
-                "p4": _pass_at_k(trs, max(k_values) if k_values else 4, which="fix"),
-                "medAtt": _median_attempts_to_pass(trs, which="fix"),
-                "imprRate": _improve_rate(trs),
-                "thrash2": _rate(r.thrash_failcurve for r in trs),
-            }
-            tier_rows.append(tr)
-
+                    p1_rate, p1_ci = _pass_at_k_with_ci(trs, 1, which="fix")
+                    p4_rate, p4_ci = _pass_at_k_with_ci(trs, max(k_values) if k_values else 4, which="fix")
+                    
+                    tr = {
+                        "tier": tier_name,
+                        "n": len(trs),
+                        "p1": p1_rate,
+                        "p1_ci": p1_ci,
+                        "p4": p4_rate,
+                        "p4_ci": p4_ci,
+                        "medAtt": _median_attempts_to_pass(trs, which="fix"),
+                        "imprRate": _improve_rate(trs),
+                        "thrash2": _rate(r.thrash_failcurve for r in trs),
+                        "error_stable": _error_stable_rate(trs),
+                        "avg_churn": _median_code_churn(trs),
+                    }
+                    tier_rows.append(tr)
 
 
         bugfix_pass_fix = {k: _pass_at_k(bugfix, k, which="fix") for k in k_values}
@@ -483,6 +680,14 @@ def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[st
         k_max = max(k_values) if k_values else 1
         hang_rec = _pass_at_k(hang, k_max, which="test")
 
+        # NEW: Code churn and error stability
+        bugfix_avg_churn = _median_code_churn(bugfix)
+        bugfix_error_stable_rate = _error_stable_rate(bugfix)
+        
+        # NEW: CIs for key metrics
+        p1_rate, p1_ci = _pass_at_k_with_ci(bugfix, 1, which="fix")
+        p4_rate, p4_ci = _pass_at_k_with_ci(bugfix, max(k_values) if k_values else 4, which="fix")
+
         row: Dict[str, Any] = {
             "run_tag": run_dir.name,
             "model": (model_id[:28] if model_id else ""),
@@ -508,8 +713,13 @@ def _summarize_run_dir(run_dir: Path, k_values: Tuple[int, ...]) -> List[Dict[st
             "stab_reg": stab_reg,
             "hang_rec": hang_rec,
             "tier_table": tier_rows,
-
-        }
+            # NEW metrics
+            "bugfix_avg_churn": bugfix_avg_churn,
+            "bugfix_error_stable_rate": bugfix_error_stable_rate,
+            "bugfix_p1_ci": p1_ci,
+            "bugfix_p4_ci": p4_ci,
+            }
+        
         for k in k_values:
             row[f"bugfix_fix_p@{k}"] = bugfix_pass_fix[k]
         out_rows.append(row)
@@ -534,13 +744,14 @@ def _fmt_num(x: Optional[float], width: int = 7, nd: int = 1) -> str:
 
 
 def main(args: Args) -> None:
+    tasks_meta = _load_tasks_metadata(args.tasks_path)
     all_rows: List[Dict[str, Any]] = []
     for d in args.run_dirs:
         run_dir = Path(d)
         if not run_dir.exists():
             print(f"[warn] missing run dir: {run_dir}")
             continue
-        all_rows.extend(_summarize_run_dir(run_dir, args.k_values))
+        all_rows.extend(_summarize_run_dir(run_dir, args.k_values, tasks_meta))
 
     if not all_rows:
         print("No runs found.")
@@ -649,23 +860,30 @@ def main(args: Args) -> None:
             "tier".ljust(8),
             "n".rjust(4),
             "fix_p@1".rjust(9),
+            "p1_CI".rjust(14),
             f"fix_p@{max(args.k_values)}".rjust(9),
-            "medAtt".rjust(8),
-            "imprRate".rjust(9),
-            "thrash2".rjust(9),
+            "p4_CI".rjust(14),
+            "errStable".rjust(9),
+            "avgChurn".rjust(8),
             sep="  ",
         )
-        print("-" * 70)
+        print("-" * 95)
 
         for tr in tier_table:
+            p1_ci = tr.get("p1_ci")
+            p4_ci = tr.get("p4_ci")
+            p1_ci_str = f"[{p1_ci[0]:.0%},{p1_ci[1]:.0%}]" if p1_ci else "n/a"
+            p4_ci_str = f"[{p4_ci[0]:.0%},{p4_ci[1]:.0%}]" if p4_ci else "n/a"
+            
             print(
                 str(tr["tier"]).ljust(8),
                 f"{int(tr['n']):4d}",
                 _fmt_rate(tr.get("p1")).rjust(9),
+                p1_ci_str.rjust(14),
                 _fmt_rate(tr.get("p4")).rjust(9),
-                _fmt_num(tr.get("medAtt"), width=8, nd=2),
-                _fmt_rate(tr.get("imprRate")).rjust(9),
-                _fmt_rate(tr.get("thrash2")).rjust(9),
+                p4_ci_str.rjust(14),
+                _fmt_rate(tr.get("error_stable")).rjust(9),
+                _fmt_num(tr.get("avg_churn"), width=8, nd=2),
                 sep="  ",
             )
 

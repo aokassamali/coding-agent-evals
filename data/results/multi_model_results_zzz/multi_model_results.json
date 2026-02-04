@@ -1,0 +1,468 @@
+{
+  "models": {
+    "deepseek_coder_6_7b_instruct_Q6_K": {
+      "n_trajectories": 200,
+      "run_dir": "runs\\zzz_deepseek_coder_6_7b_instruct_Q6_K",
+      "data_fingerprint": "4e3c151fa3b1",
+      "model_ids": [
+        "deepseek_coder_6_7b_instruct_Q6_K"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 14,
+        "approach_switch_rate": 0.13333333333333333,
+        "early_deviations": 14,
+        "early_deviation_rate": 0.13333333333333333,
+        "fix_by_attempt": {
+          "2": 70,
+          "1": 51,
+          "3": 43
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 130,
+          "3": 48
+        },
+        "approach_coverage": {
+          "detected": 200,
+          "total": 200,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 105,
+        "deviations": 14,
+        "rate": 0.13333333333333333,
+        "by_topic": {
+          "string_match": {
+            "total": 15,
+            "deviations": 0
+          },
+          "sorting": {
+            "total": 25,
+            "deviations": 0
+          },
+          "search": {
+            "total": 9,
+            "deviations": 8
+          },
+          "heap": {
+            "total": 25,
+            "deviations": 0
+          },
+          "topological_sort": {
+            "total": 6,
+            "deviations": 6
+          },
+          "trie": {
+            "total": 25,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.745,
+          "cumulative_fix_prob": 0.255,
+          "hazard_rate": 0.255,
+          "at_risk": 200,
+          "events": 51
+        },
+        "2": {
+          "survival_prob": 0.34384615384615386,
+          "cumulative_fix_prob": 0.6561538461538461,
+          "hazard_rate": 0.5384615384615384,
+          "at_risk": 130,
+          "events": 70
+        },
+        "3": {
+          "survival_prob": 0.03581730769230768,
+          "cumulative_fix_prob": 0.9641826923076923,
+          "hazard_rate": 0.8958333333333334,
+          "at_risk": 48,
+          "events": 43
+        },
+        "4": {
+          "survival_prob": 0.03581730769230768,
+          "cumulative_fix_prob": 0.9641826923076923,
+          "hazard_rate": 0.0,
+          "at_risk": 0,
+          "events": 0
+        }
+      }
+    },
+    "codegemma_7b_it_Q6_K": {
+      "n_trajectories": 200,
+      "run_dir": "runs\\zzz_codegemma_7b_it_Q6_K",
+      "data_fingerprint": "73bab115e306",
+      "model_ids": [
+        "codegemma_7b_it_Q6_K"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 18,
+        "approach_switch_rate": 0.16666666666666666,
+        "early_deviations": 18,
+        "early_deviation_rate": 0.16666666666666666,
+        "fix_by_attempt": {
+          "3": 45,
+          "1": 51,
+          "2": 71
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 133,
+          "3": 51
+        },
+        "approach_coverage": {
+          "detected": 200,
+          "total": 200,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 108,
+        "deviations": 18,
+        "rate": 0.16666666666666666,
+        "by_topic": {
+          "string_match": {
+            "total": 15,
+            "deviations": 0
+          },
+          "sorting": {
+            "total": 25,
+            "deviations": 0
+          },
+          "search": {
+            "total": 9,
+            "deviations": 9
+          },
+          "heap": {
+            "total": 25,
+            "deviations": 0
+          },
+          "topological_sort": {
+            "total": 9,
+            "deviations": 9
+          },
+          "trie": {
+            "total": 25,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.745,
+          "cumulative_fix_prob": 0.255,
+          "hazard_rate": 0.255,
+          "at_risk": 200,
+          "events": 51
+        },
+        "2": {
+          "survival_prob": 0.34729323308270676,
+          "cumulative_fix_prob": 0.6527067669172932,
+          "hazard_rate": 0.5338345864661654,
+          "at_risk": 133,
+          "events": 71
+        },
+        "3": {
+          "survival_prob": 0.04085802742149492,
+          "cumulative_fix_prob": 0.9591419725785051,
+          "hazard_rate": 0.8823529411764706,
+          "at_risk": 51,
+          "events": 45
+        },
+        "4": {
+          "survival_prob": 0.04085802742149492,
+          "cumulative_fix_prob": 0.9591419725785051,
+          "hazard_rate": 0.0,
+          "at_risk": 0,
+          "events": 0
+        }
+      }
+    },
+    "qwen2_5_coder_7b_instruct_q4_k_m": {
+      "n_trajectories": 200,
+      "run_dir": "runs\\zzz_qwen2_5_coder_7b_instruct_q4_k_m",
+      "data_fingerprint": "8093e257ae83",
+      "model_ids": [
+        "qwen2_5_coder_7b_instruct_q4_k_m"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 16,
+        "approach_switch_rate": 0.14953271028037382,
+        "early_deviations": 16,
+        "early_deviation_rate": 0.14953271028037382,
+        "fix_by_attempt": {
+          "3": 44,
+          "1": 51,
+          "2": 72
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 132,
+          "3": 50
+        },
+        "approach_coverage": {
+          "detected": 200,
+          "total": 200,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 107,
+        "deviations": 16,
+        "rate": 0.14953271028037382,
+        "by_topic": {
+          "string_match": {
+            "total": 15,
+            "deviations": 0
+          },
+          "sorting": {
+            "total": 25,
+            "deviations": 0
+          },
+          "search": {
+            "total": 9,
+            "deviations": 8
+          },
+          "heap": {
+            "total": 25,
+            "deviations": 0
+          },
+          "topological_sort": {
+            "total": 8,
+            "deviations": 8
+          },
+          "trie": {
+            "total": 25,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.745,
+          "cumulative_fix_prob": 0.255,
+          "hazard_rate": 0.255,
+          "at_risk": 200,
+          "events": 51
+        },
+        "2": {
+          "survival_prob": 0.3386363636363637,
+          "cumulative_fix_prob": 0.6613636363636364,
+          "hazard_rate": 0.5454545454545454,
+          "at_risk": 132,
+          "events": 72
+        },
+        "3": {
+          "survival_prob": 0.04063636363636364,
+          "cumulative_fix_prob": 0.9593636363636364,
+          "hazard_rate": 0.88,
+          "at_risk": 50,
+          "events": 44
+        },
+        "4": {
+          "survival_prob": 0.04063636363636364,
+          "cumulative_fix_prob": 0.9593636363636364,
+          "hazard_rate": 0.0,
+          "at_risk": 0,
+          "events": 0
+        }
+      }
+    },
+    "qwen2_5_coder_3b_instruct_q6_k": {
+      "n_trajectories": 200,
+      "run_dir": "runs\\zzz_qwen2_5_coder_3b_instruct_q6_k",
+      "data_fingerprint": "3e91ff9f67a0",
+      "model_ids": [
+        "qwen2_5_coder_3b_instruct_q6_k"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 17,
+        "approach_switch_rate": 0.1588785046728972,
+        "early_deviations": 17,
+        "early_deviation_rate": 0.1588785046728972,
+        "fix_by_attempt": {
+          "3": 43,
+          "1": 51,
+          "2": 72
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 132,
+          "3": 51
+        },
+        "approach_coverage": {
+          "detected": 200,
+          "total": 200,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 107,
+        "deviations": 17,
+        "rate": 0.1588785046728972,
+        "by_topic": {
+          "string_match": {
+            "total": 15,
+            "deviations": 0
+          },
+          "sorting": {
+            "total": 25,
+            "deviations": 0
+          },
+          "search": {
+            "total": 9,
+            "deviations": 9
+          },
+          "heap": {
+            "total": 25,
+            "deviations": 0
+          },
+          "topological_sort": {
+            "total": 8,
+            "deviations": 8
+          },
+          "trie": {
+            "total": 25,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.745,
+          "cumulative_fix_prob": 0.255,
+          "hazard_rate": 0.255,
+          "at_risk": 200,
+          "events": 51
+        },
+        "2": {
+          "survival_prob": 0.3386363636363637,
+          "cumulative_fix_prob": 0.6613636363636364,
+          "hazard_rate": 0.5454545454545454,
+          "at_risk": 132,
+          "events": 72
+        },
+        "3": {
+          "survival_prob": 0.05311942959001783,
+          "cumulative_fix_prob": 0.9468805704099822,
+          "hazard_rate": 0.8431372549019608,
+          "at_risk": 51,
+          "events": 43
+        },
+        "4": {
+          "survival_prob": 0.05311942959001783,
+          "cumulative_fix_prob": 0.9468805704099822,
+          "hazard_rate": 0.0,
+          "at_risk": 0,
+          "events": 0
+        }
+      }
+    },
+    "qwen2_5_coder_7b_instruct_q6_k": {
+      "n_trajectories": 200,
+      "run_dir": "runs\\zzz_qwen2_5_coder_7b_instruct_q6_k",
+      "data_fingerprint": "756ad2ff19a0",
+      "model_ids": [
+        "qwen2_5_coder_7b_instruct_q6_k"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 17,
+        "approach_switch_rate": 0.1574074074074074,
+        "early_deviations": 17,
+        "early_deviation_rate": 0.1574074074074074,
+        "fix_by_attempt": {
+          "3": 43,
+          "1": 51,
+          "2": 73
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 133,
+          "3": 50
+        },
+        "approach_coverage": {
+          "detected": 200,
+          "total": 200,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 108,
+        "deviations": 17,
+        "rate": 0.1574074074074074,
+        "by_topic": {
+          "string_match": {
+            "total": 15,
+            "deviations": 0
+          },
+          "sorting": {
+            "total": 25,
+            "deviations": 0
+          },
+          "search": {
+            "total": 9,
+            "deviations": 8
+          },
+          "heap": {
+            "total": 25,
+            "deviations": 0
+          },
+          "topological_sort": {
+            "total": 9,
+            "deviations": 9
+          },
+          "trie": {
+            "total": 25,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.745,
+          "cumulative_fix_prob": 0.255,
+          "hazard_rate": 0.255,
+          "at_risk": 200,
+          "events": 51
+        },
+        "2": {
+          "survival_prob": 0.3360902255639098,
+          "cumulative_fix_prob": 0.6639097744360902,
+          "hazard_rate": 0.5488721804511278,
+          "at_risk": 133,
+          "events": 73
+        },
+        "3": {
+          "survival_prob": 0.047052631578947374,
+          "cumulative_fix_prob": 0.9529473684210527,
+          "hazard_rate": 0.86,
+          "at_risk": 50,
+          "events": 43
+        },
+        "4": {
+          "survival_prob": 0.047052631578947374,
+          "cumulative_fix_prob": 0.9529473684210527,
+          "hazard_rate": 0.0,
+          "at_risk": 0,
+          "events": 0
+        }
+      }
+    }
+  },
+  "summary": {
+    "n_models": 5,
+    "total_trajectories": 1000
+  }
+}

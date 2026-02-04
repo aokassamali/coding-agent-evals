@@ -1,0 +1,102 @@
+{
+  "models": {
+    "qwen2_5_coder_7b_instruct_q6_k": {
+      "n_trajectories": 200,
+      "run_dir": "runs\\temp2_qwen2_5_coder_7b_instruct_q6_k",
+      "data_fingerprint": "3df2ff6baeb7",
+      "model_ids": [
+        "qwen2_5_coder_7b_instruct_q6_k"
+      ],
+      "task_count": 200,
+      "enhanced_metrics": {
+        "total": 200,
+        "approach_switches": 21,
+        "approach_switch_rate": 0.1693548387096774,
+        "early_deviations": 11,
+        "early_deviation_rate": 0.08870967741935484,
+        "fix_by_attempt": {
+          "2": 136,
+          "1": 51,
+          "3": 12,
+          "4": 1
+        },
+        "attempts_tried": {
+          "1": 200,
+          "2": 149,
+          "3": 13,
+          "4": 1
+        },
+        "approach_coverage": {
+          "detected": 200,
+          "total": 200,
+          "rate": 1.0
+        }
+      },
+      "deviation_stats": {
+        "total": 124,
+        "deviations": 11,
+        "rate": 0.08870967741935484,
+        "by_topic": {
+          "string_match": {
+            "total": 15,
+            "deviations": 0
+          },
+          "sorting": {
+            "total": 25,
+            "deviations": 0
+          },
+          "search": {
+            "total": 9,
+            "deviations": 0
+          },
+          "heap": {
+            "total": 25,
+            "deviations": 0
+          },
+          "topological_sort": {
+            "total": 25,
+            "deviations": 11
+          },
+          "trie": {
+            "total": 25,
+            "deviations": 0
+          }
+        }
+      },
+      "survival": {
+        "1": {
+          "survival_prob": 0.745,
+          "cumulative_fix_prob": 0.255,
+          "hazard_rate": 0.255,
+          "at_risk": 200,
+          "events": 51
+        },
+        "2": {
+          "survival_prob": 0.06499999999999999,
+          "cumulative_fix_prob": 0.935,
+          "hazard_rate": 0.912751677852349,
+          "at_risk": 149,
+          "events": 136
+        },
+        "3": {
+          "survival_prob": 0.004999999999999996,
+          "cumulative_fix_prob": 0.995,
+          "hazard_rate": 0.9230769230769231,
+          "at_risk": 13,
+          "events": 12
+        },
+        "4": {
+          "survival_prob": 0.0,
+          "cumulative_fix_prob": 1.0,
+          "hazard_rate": 1.0,
+          "at_risk": 1,
+          "events": 1
+        }
+      }
+    }
+  },
+  "summary": {
+    "n_models": 1,
+    "total_trajectories": 200
+  }
+}

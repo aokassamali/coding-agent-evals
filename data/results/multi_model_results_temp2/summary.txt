@@ -1,0 +1,11 @@
+MULTI-MODEL ANALYSIS SUMMARY
+====================================================================================================
+
+Models analyzed: 1
+Total trajectories: 200
+
+
+qwen2_5_coder_7b_instruct_q6_k:
+  Trajectories: 200
+  Switch rate: 16.9%
+  Early dev rate: 8.9%

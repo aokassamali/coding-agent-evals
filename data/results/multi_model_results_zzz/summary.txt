@@ -1,0 +1,35 @@
+MULTI-MODEL ANALYSIS SUMMARY
+====================================================================================================
+
+Models analyzed: 5
+Total trajectories: 1000
+
+
+deepseek_coder_6_7b_instruct_Q6_K:
+  Trajectories: 200
+  Switch rate: 13.3%
+  Early dev rate: 13.3%
+
+codegemma_7b_it_Q6_K:
+  Trajectories: 200
+  Switch rate: 16.7%
+  Early dev rate: 16.7%
+
+qwen2_5_coder_7b_instruct_q4_k_m:
+  Trajectories: 200
+  Switch rate: 15.0%
+  Early dev rate: 15.0%
+
+qwen2_5_coder_3b_instruct_q6_k:
+  Trajectories: 200
+  Switch rate: 15.9%
+  Early dev rate: 15.9%
+
+qwen2_5_coder_7b_instruct_q6_k:
+  Trajectories: 200
+  Switch rate: 15.7%
+  Early dev rate: 15.7%
+
+
+Key Insights:
+1. [+] 5/5 models show decreasing hazard rates - evidence of entrenchment over time
